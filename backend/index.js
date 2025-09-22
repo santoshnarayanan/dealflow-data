@@ -1,6 +1,10 @@
 import express from "express"
 import cors from "cors";
 import neo4j from "neo4j-driver";
+import dotenv from "dotenv"
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -8,12 +12,13 @@ app.use(express.json());
 
 // Neo4j connection
 const driver = neo4j.driver(
-  process.env.NEO4J_URI || "neo4j+s://ab619e5d.databases.neo4j.io",
+  process.env.NEO4J_URI,
   neo4j.auth.basic(
-    process.env.NEO4J_USERNAME || "neo4j",
-    process.env.NEO4J_PASSWORD || "wc7UPtU8Aak74XJR6vAzH0jRECe22cuT_rmyLYoaf0o"
+    process.env.NEO4J_USERNAME,
+    process.env.NEO4J_PASSWORD
   )
 );
+
 
 
 // Utility function for running Cypher queries
