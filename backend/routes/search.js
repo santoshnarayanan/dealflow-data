@@ -11,7 +11,7 @@ router.get("/", async (req, res, next) => {
     if (!industry) {
       return res
         .status(400)
-        .json({ error: "industry query parameter is required" });
+        .json({ error: "Query parameter 'industry' is required" });
     }
 
     const startups = await searchStartupsByIndustry(industry);
