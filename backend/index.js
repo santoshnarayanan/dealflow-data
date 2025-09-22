@@ -14,27 +14,53 @@ const driver = neo4j.driver(
     process.env.NEO4J_PASSWORD || "wc7UPtU8Aak74XJR6vAzH0jRECe22cuT_rmyLYoaf0o"
   )
 );
-const session = driver.session();
+
+
+// Utility function for running Cypher queries
+async function runQuery(cypher, params = {}) {
+  const session = driver.session();
+  try {
+    return await session.run(cypher, params);
+  } finally {
+    await session.close();
+  }
+}
 
 // Endpoints
 app.get("/startups", async (req, res) => {
-  const result = await session.run("MATCH (s:Startup) RETURN s LIMIT 20");
-  res.json(result.records.map((r) => r.get("s").properties));
+  try {
+    const result = await runQuery("MATCH (s:Startup) RETURN s LIMIT 20");
+    res.json(result.records.map(r => r.get("s").properties));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch startups" });
+  }
 });
 
 app.get("/investors", async (req, res) => {
-  const result = await session.run("MATCH (i:Investor) RETURN i LIMIT 20");
-  res.json(result.records.map((r) => r.get("i").properties));
+  try {
+    const result = await runQuery("MATCH (i:Investor) RETURN i LIMIT 20");
+    res.json(result.records.map(r => r.get("i").properties));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch investors" });
+  }
 });
 
 app.get("/search", async (req, res) => {
   const { industry } = req.query;
-  const result = await session.run(
-    "MATCH (s:Startup {industry:$industry}) RETURN s",
-    { industry }
-  );
-  res.json(result.records.map((r) => r.get("s").properties));
+  try {
+    const result = await runQuery(
+      "MATCH (s:Startup {industry:$industry}) RETURN s",
+      { industry }
+    );
+    res.json(result.records.map(r => r.get("s").properties));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to search startups" });
+  }
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 API running on port ${PORT}`));
