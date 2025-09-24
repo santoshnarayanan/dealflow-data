@@ -9,11 +9,14 @@ function Navbar() {
     return (
         <nav className="bg-gray-800">
             <div className="container mx-auto flex items-center justify-between p-4">
+                {/* Brand */}
                 <h1 className="text-xl font-bold text-white">Dealflow</h1>
+
+                {/* Links always visible */}
                 <div className="flex space-x-4">
                     <NavLink
                         to="/"
-                        className={({ isActive }) =>
+                        className={({ isActive }: { isActive: boolean }) =>
                             `${linkClasses} ${isActive ? activeClasses : inactiveClasses}`
                         }
                     >
@@ -21,7 +24,7 @@ function Navbar() {
                     </NavLink>
                     <NavLink
                         to="/investors"
-                        className={({ isActive }) =>
+                        className={({ isActive }: { isActive: boolean }) =>
                             `${linkClasses} ${isActive ? activeClasses : inactiveClasses}`
                         }
                     >
@@ -29,7 +32,7 @@ function Navbar() {
                     </NavLink>
                     <NavLink
                         to="/ai-query"
-                        className={({ isActive }) =>
+                        className={({ isActive }: { isActive: boolean }) =>
                             `${linkClasses} ${isActive ? activeClasses : inactiveClasses}`
                         }
                     >
