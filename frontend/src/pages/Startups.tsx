@@ -5,6 +5,7 @@ import { fetchStartups } from "../services/api";
 
 function Startups() {
     const [rows, setRows] = useState<any[]>([]);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
         fetchStartups().then((data) => {
@@ -23,11 +24,29 @@ function Startups() {
         { field: "industry", headerName: "Industry", flex: 1 },
     ];
 
+    const filteredRows = rows.filter(
+        (row) =>
+            row.name.toLowerCase().includes(search.toLowerCase()) ||
+            row.industry.toLowerCase().includes(search.toLowerCase())
+    );
+
     return (
-        <div style={{ height: 500, width: "100%" }}>
+        <div style={{ height: 550, width: "100%" }}>
             <h1 className="text-3xl font-bold mb-4 text-center">🚀 Startups</h1>
+
+            {/* Search bar */}
+            <div className="mb-4 flex justify-center">
+                <input
+                    type="text"
+                    placeholder="Search startups..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-1/2 px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+
             <DataGrid
-                rows={rows}
+                rows={filteredRows}
                 columns={columns}
                 pageSizeOptions={[5, 10]}
                 initialState={{
