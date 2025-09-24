@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 
+.even-row {
+    background-color: #f9fafb; /* light gray */
+}
+.odd-row {
+    background-color: #ffffff; /* white */
+}
 
 /*
 :root {

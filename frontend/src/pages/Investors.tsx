@@ -1,30 +1,45 @@
 import { useEffect, useState } from "react";
+import { DataGrid } from "@mui/x-data-grid";
+import type { GridColDef } from "@mui/x-data-grid";
 import { fetchInvestors } from "../services/api";
 
 function Investors() {
-    const [investors, setInvestors] = useState<any[]>([]);
+    const [rows, setRows] = useState<any[]>([]);
 
     useEffect(() => {
-        fetchInvestors().then(setInvestors);
+        fetchInvestors().then((data) => {
+            const formatted = data.map((item: any, index: number) => ({
+                id: index + 1,
+                name: item.name || "Unnamed Investor",
+                firm: item.firm || "N/A",
+            }));
+            setRows(formatted);
+        });
     }, []);
 
-    return (
-        <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold mb-6 text-center">💼 Investors</h1>
+    const columns: GridColDef[] = [
+        { field: "id", headerName: "ID", width: 90 },
+        { field: "name", headerName: "Name", flex: 1 },
+        { field: "firm", headerName: "Firm", flex: 1 },
+    ];
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-items-center">
-                {investors.map((i, idx) => (
-                    <div
-                        key={idx}
-                        className="bg-white rounded-2xl shadow-md p-6 w-full max-w-sm hover:shadow-lg transition"
-                    >
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            {i.name || "Unnamed Investor"}
-                        </h2>
-                        <p className="text-gray-500">{i.firm || "Firm not specified"}</p>
-                    </div>
-                ))}
-            </div>
+    return (
+        <div style={{ height: 500, width: "100%" }}>
+            <h1 className="text-3xl font-bold mb-4 text-center">💼 Investors</h1>
+            <DataGrid
+                rows={rows}
+                columns={columns}
+                pageSizeOptions={[5, 10]}
+                initialState={{
+                    pagination: { paginationModel: { pageSize: 5 } },
+                }}
+                disableRowSelectionOnClick
+                getRowClassName={(params) =>
+                    params.indexRelativeToCurrentPage % 2 === 0
+                        ? "even-row"
+                        : "odd-row"
+                }
+            />
         </div>
     );
 }
