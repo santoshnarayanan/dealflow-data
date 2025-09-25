@@ -80,3 +80,23 @@ backend/
 3. Service executes Cypher query via Neo4j driver.  
 4. Results returned to client.  
 ![Sequence diagram](./images/sequence-diagram.png)
+
+## 8. LangChain Usage
+
+LangChain is integrated into the backend for **AI-driven query generation**.  
+
+### Workflow
+1. User submits a natural language question via `/ai-query`.
+2. LangChain uses the **graph schema definition (`ai/config/schema.js`)** to understand available node labels and relationships.
+3. It builds a Cypher query using its **CypherQAChain** module.
+4. The query is executed on Neo4j.
+5. Results are returned as JSON.
+
+### Example
+Question:  
+> "Which investors participated in Series A rounds?"
+
+Generated Cypher:  
+```cypher
+MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound {roundType:'Series A'})
+RETURN DISTINCT i.name;

@@ -1,6 +1,8 @@
 # Dealflow Data Platform
 
-A graph-based platform to manage **startups, investors, and funding rounds** using **Neo4j** and **Express.js** backend.
+- A graph-based platform to manage **startups, investors, and funding rounds** using **Neo4j** and **Express.js** backend.
+- This project integrates **LangChain** to allow **natural language questions** (e.g., *“Which investors funded RoboWorks?”*) to be automatically translated into **Cypher queries**.
+- Also refer **Technical design document** in file **Technical-design.md** 
 
 ---
 
