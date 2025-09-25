@@ -43,6 +43,7 @@ It combines **Neo4j** as the database, **Express.js** as the backend service lay
 - `(Startup)-[:RAISED]->(FundingRound)`
 - `(Investor)-[:INVESTED_IN]->(FundingRound)`
 
+![Nodes and Relationships](./images/visualisation.png)
 ---
 
 ## 4. Backend Modules
