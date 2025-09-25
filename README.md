@@ -142,7 +142,7 @@ RETURN i.name;
 
 ```
 
-## 🌐 API Usage examples
+## 🌐 API Usage
 ### 1. List Startups
 ```bash
 curl http://localhost:3000/startups
