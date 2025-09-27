@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:3000"; // adjust if backend changes
+// const API_BASE = "http://localhost:3000"; // adjust if backend changes
+const API_BASE = "https://dealflow-backend-676900724267.asia-south1.run.app"; // adjust if backend changes
 
 export async function fetchStartups() {
   const res = await fetch(`${API_BASE}/startups`);
