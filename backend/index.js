@@ -38,12 +38,12 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // ✅ Init LangChain before starting server
 async function startServer() {
   try {
-    await initLangChain();
+    // await initLangChain();
     app.listen(PORT, () => console.log(`🚀 API running on port ${PORT}`));
   } catch (err) {
     console.error("❌ Failed to start server:", err);
