@@ -186,7 +186,8 @@ curl -X POST http://localhost:3000/ai-query \
 - RESTful API endpoints for startups, investors, and search  
 - Deployable on **GCP Cloud Run** for scalable cloud hosting  
 - Easy CSV import for bulk loading into Neo4j  
-- Extendable schema for additional domains  
+- Extendable schema for additional domains 
+- Runs seamlessly on Neo4j Aura Free Tier for quick cloud deployment
 
 ---
 
@@ -196,6 +197,7 @@ curl -X POST http://localhost:3000/ai-query \
 - **Database:** Neo4j (AuraDB / Desktop)  
 - **AI Layer:** LangChain (LLM → Cypher translator)  
 - **Deployment:** Google Cloud Platform (Cloud Run)  
+- **Database:** Neo4j Aura (Free Tier) or Neo4j Desktop (v5.x)
 
 ---
 
