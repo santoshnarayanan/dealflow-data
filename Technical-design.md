@@ -100,3 +100,39 @@ Generated Cypher:
 ```cypher
 MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound {roundType:'Series A'})
 RETURN DISTINCT i.name;
+```
+---
+
+## 6. Tech Stack 
+- **Frontend:** React + TypeScript (planned)  
+- **Backend:** Node.js with Express.js  
+- **Database:** Neo4j Aura Free Tier (cloud) or Neo4j Desktop  
+- **AI Layer:** LangChain + OpenAI (Cypher query generation)  
+- **Deployment:** Google Cloud Run (containerized backend)  
+
+---
+
+## 7. Deployment 
+- **Containerization:** Backend packaged as Docker container  
+- **Hosting:** Google Cloud Run (serverless, auto-scaling)  
+- **Database:** Neo4j Aura Free Tier (managed cloud DB, no manual hosting required)  
+- **Environment Config:**  
+  - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `PORT` managed via environment variables  
+
+---
+
+## 9. Non-Functional Considerations 
+- **Scalability:** Cloud Run autoscaling supports sudden workload spikes.  
+- **Cost:** Minimal cost footprint by leveraging free tiers (Cloud Run free tier + Neo4j Aura free tier).  
+- **Portability:** System can be deployed locally or on any cloud supporting Docker containers.  
+- **Extensibility:** Easy to extend schema with new node labels (e.g., `Accelerator`, `Advisor`).  
+
+---
+
+## 10. License & Acknowledgements  
+- Licensed under [MIT License](./LICENSE).  
+- Acknowledges contributions of open-source frameworks:  
+  - LangChain (MIT License)  
+  - Neo4j (GPLv3 / commercial options)  
+  - React (MIT License)  
+  - Node.js (MIT License)  
