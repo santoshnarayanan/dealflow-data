@@ -4,6 +4,8 @@
 - This project integrates **LangChain** to allow **natural language questions** (e.g., *“Which investors funded RoboWorks?”*) to be automatically translated into **Cypher queries**.
 - Also refer **Technical design document** in file **Technical-design.md** 
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)  
+
 ---
 
 ## 📑 Table of Contents
@@ -14,7 +16,11 @@
   - [💼 Investors](#-investors)
   - [💰 Funding Rounds](#-funding-rounds)
 - [🌐 API Usage](#-api-usage)
-
+- [✨ Features](#-features) 
+- [🛠 Tech Stack](#-tech-stack) 
+- [🤝 Contributing](#-contributing) 
+- [📜 License](#-license) 
+- [🙏 Acknowledgements](#-acknowledgements) 
 ---
 
 ## 🚀 Setup Guide
@@ -174,3 +180,48 @@ curl -X POST http://localhost:3000/ai-query \
   -d '{"question": "Which investors funded RoboWorks?"}'
 ```
 
+## ✨ Features <!-- 🆕 -->
+- Graph-based model for startups, investors, and funding rounds  
+- AI-powered **natural language to Cypher** via LangChain  
+- RESTful API endpoints for startups, investors, and search  
+- Deployable on **GCP Cloud Run** for scalable cloud hosting  
+- Easy CSV import for bulk loading into Neo4j  
+- Extendable schema for additional domains  
+
+---
+
+## 🛠 Tech Stack <!-- 🆕 -->
+- **Frontend:** React + TypeScript (planned)  
+- **Backend:** Node.js (Express.js)  
+- **Database:** Neo4j (AuraDB / Desktop)  
+- **AI Layer:** LangChain (LLM → Cypher translator)  
+- **Deployment:** Google Cloud Platform (Cloud Run)  
+
+---
+
+## 🤝 Contributing <!-- 🆕 -->
+Contributions are welcome!  
+1. Fork the repository  
+2. Create your feature branch (`git checkout -b feature/YourFeature`)  
+3. Commit your changes (`git commit -m 'Add some feature'`)  
+4. Push to the branch (`git push origin feature/YourFeature`)  
+5. Open a Pull Request  
+
+Please check `Technical-design.md` before proposing major architectural changes.  
+
+---
+
+## 📜 License <!-- 🆕 -->
+This project is licensed under the [MIT License](LICENSE).  
+
+---
+
+## 🙏 Acknowledgements <!-- 🆕 -->
+This project uses the following open-source libraries and frameworks:  
+
+- [LangChain](https://github.com/langchain-ai/langchain) (MIT License)  
+- [Neo4j](https://github.com/neo4j/neo4j) (GPLv3 / commercial options)  
+- [React](https://github.com/facebook/react) (MIT License)  
+- [Node.js](https://github.com/nodejs/node) (MIT License)  
+
+We gratefully acknowledge the work of these communities. 
