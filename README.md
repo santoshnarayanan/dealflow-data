@@ -21,6 +21,7 @@
 - [🤝 Contributing](#-contributing) 
 - [📜 License](#-license) 
 - [🙏 Acknowledgements](#-acknowledgements) 
+- [📌 Notice](#-notice) 
 ---
 
 ## 🚀 Setup Guide
@@ -227,3 +228,15 @@ This project uses the following open-source libraries and frameworks:
 - [Node.js](https://github.com/nodejs/node) (MIT License)  
 
 We gratefully acknowledge the work of these communities. 
+
+---
+
+## 📌 Notice
+
+Copyright © 2025 [Santosh Narayanan](https://github.com/santoshnarayanan)  
+
+This project is licensed under the [MIT License](./LICENSE).  
+You are free to use, modify, and distribute this project in accordance with the license, but attribution to the original author is required.  
+
+For reference, the original repository is available at:  
+[https://github.com/santoshnarayanan/dealflow-data](https://github.com/santoshnarayanan/dealflow-data)
