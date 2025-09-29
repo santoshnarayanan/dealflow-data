@@ -181,7 +181,7 @@ curl -X POST http://localhost:3000/ai-query \
   -d '{"question": "Which investors funded RoboWorks?"}'
 ```
 
-## ✨ Features <!-- 🆕 -->
+## ✨ Features
 - Graph-based model for startups, investors, and funding rounds  
 - AI-powered **natural language to Cypher** via LangChain  
 - RESTful API endpoints for startups, investors, and search  
@@ -192,7 +192,7 @@ curl -X POST http://localhost:3000/ai-query \
 
 ---
 
-## 🛠 Tech Stack <!-- 🆕 -->
+## 🛠 Tech Stack
 - **Frontend:** React + TypeScript (planned)  
 - **Backend:** Node.js (Express.js)  
 - **Database:** Neo4j (AuraDB / Desktop)  
@@ -202,7 +202,7 @@ curl -X POST http://localhost:3000/ai-query \
 
 ---
 
-## 🤝 Contributing <!-- 🆕 -->
+## 🤝 Contributing
 Contributions are welcome!  
 1. Fork the repository  
 2. Create your feature branch (`git checkout -b feature/YourFeature`)  
@@ -214,12 +214,12 @@ Please check `Technical-design.md` before proposing major architectural changes.
 
 ---
 
-## 📜 License <!-- 🆕 -->
+## 📜 License
 This project is licensed under the [MIT License](LICENSE).  
 
 ---
 
-## 🙏 Acknowledgements <!-- 🆕 -->
+## 🙏 Acknowledgements
 This project uses the following open-source libraries and frameworks:  
 
 - [LangChain](https://github.com/langchain-ai/langchain) MIT License  
