@@ -229,6 +229,11 @@ This project uses the following open-source libraries and frameworks:
 
 We gratefully acknowledge the work of these communities. 
 
+ℹ️ Note on licenses:  
+- MIT (used by LangChain, React, Node.js) is a permissive license — you can reuse the code freely as long as you credit the original author.  
+- GPL v3 (used by Neo4j Community Edition) is a copyleft license — if you modify and distribute the database itself, you must also share your changes under GPL.  
+
+
 ---
 
 ## 📌 Notice
