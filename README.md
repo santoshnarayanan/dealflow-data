@@ -222,10 +222,10 @@ This project is licensed under the [MIT License](LICENSE).
 ## 🙏 Acknowledgements <!-- 🆕 -->
 This project uses the following open-source libraries and frameworks:  
 
-- [LangChain](https://github.com/langchain-ai/langchain) (MIT License)  
-- [Neo4j](https://github.com/neo4j/neo4j) (GPLv3 / commercial options)  
-- [React](https://github.com/facebook/react) (MIT License)  
-- [Node.js](https://github.com/nodejs/node) (MIT License)  
+- [LangChain](https://github.com/langchain-ai/langchain) MIT License  
+- [Neo4j](https://github.com/neo4j/neo4j) GPL v3 (Community Edition) / Commercial options (Enterprise & Aura) 
+- [React](https://github.com/facebook/react) MIT License 
+- [Node.js](https://github.com/nodejs/node) MIT License  
 
 We gratefully acknowledge the work of these communities. 
 
