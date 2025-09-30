@@ -8,6 +8,7 @@ import { graphSchema } from "../config/schema.js";
 let llm;
 let graph;
 let cypherPrompt;
+let chain;
 
 export async function initLangChain() {
   graph = await Neo4jGraph.initialize({
