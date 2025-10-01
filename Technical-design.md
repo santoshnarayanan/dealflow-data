@@ -8,7 +8,7 @@ It combines **Neo4j** as the database, **Express.js** as the backend service lay
 
 ## 2. Architecture
 
-![Dealflow Architecture](./images/dealflow_ai_architecture_clean.svg)
+![Dealflow Architecture](./images/dealflow_ai_architecture_clean.png)
 
 ### Components
 - **Frontend (planned)**  
