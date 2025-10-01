@@ -81,6 +81,25 @@ backend/
 4. Results returned to client.  
 ![Sequence diagram](./images/sequence-diagram.png)
 
+---
+## 6. Tech Stack 
+- **Frontend:** React + TypeScript tested and deployed on GCP free tier
+- **Backend:** Node.js with Express.js  tested and deployed on GCP free tier
+- **Database:** Neo4j Aura Free Tier (cloud) or Neo4j Desktop  
+- **AI Layer:** LangChain + OpenAI (Cypher query generation)  
+- **Deployment:** Google Cloud Run (containerized backend)  
+
+---
+
+## 7. Deployment 
+- **Containerization:** Backend packaged as Docker container  
+- **Hosting:** Google Cloud Run (serverless, auto-scaling)  
+- **Database:** Neo4j Aura Free Tier (managed cloud DB, no manual hosting required)  
+- **Environment Config:**  
+  - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `PORT` managed via environment variables  
+
+---
+
 ## 8. LangChain Usage
 
 LangChain is integrated into the backend for **AI-driven query generation**.  
@@ -101,24 +120,6 @@ Generated Cypher:
 MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound {roundType:'Series A'})
 RETURN DISTINCT i.name;
 ```
----
-
-## 6. Tech Stack 
-- **Frontend:** React + TypeScript (planned)  
-- **Backend:** Node.js with Express.js  
-- **Database:** Neo4j Aura Free Tier (cloud) or Neo4j Desktop  
-- **AI Layer:** LangChain + OpenAI (Cypher query generation)  
-- **Deployment:** Google Cloud Run (containerized backend)  
-
----
-
-## 7. Deployment 
-- **Containerization:** Backend packaged as Docker container  
-- **Hosting:** Google Cloud Run (serverless, auto-scaling)  
-- **Database:** Neo4j Aura Free Tier (managed cloud DB, no manual hosting required)  
-- **Environment Config:**  
-  - `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `PORT` managed via environment variables  
-
 ---
 
 ## 9. Non-Functional Considerations 
