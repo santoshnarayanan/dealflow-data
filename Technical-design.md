@@ -92,7 +92,7 @@ backend/
 ---
 
 ## 7. Deployment 
-- **Containerization:** Backend packaged as Docker container  
+- **Containerization:** Both frontend and backend packaged as Docker containers  
 - **Hosting:** Google Cloud Run (serverless, auto-scaling)  
 - **Database:** Neo4j Aura Free Tier (managed cloud DB, no manual hosting required)  
 - **Environment Config:**  
@@ -102,24 +102,31 @@ backend/
 
 ## 8. LangChain Usage
 
-LangChain is integrated into the backend for **AI-driven query generation**.  
+LangChain is integrated into the backend for **AI-driven Cypher query generation**.  
 
 ### Workflow
-1. User submits a natural language question via `/ai-query`.
-2. LangChain uses the **graph schema definition (`ai/config/schema.js`)** to understand available node labels and relationships.
-3. It builds a Cypher query using its **CypherQAChain** module.
-4. The query is executed on Neo4j.
-5. Results are returned as JSON.
+1. User submits a natural language question via `/ai-query`.  
+2. LangChain uses the **graph schema definition (`ai/config/schema.js`)** to understand available node labels and relationships.  
+3. A **PromptTemplate** is filled with the schema and user question, then passed to the LLM (`ChatOpenAI`). The model generates a Cypher query as plain text.  
+4. The Cypher output is sanitized (removing formatting such as code fences) and executed against Neo4j.  
+5. Results are returned as structured JSON.  
 
 ### Example
 Question:  
 > "Which investors participated in Series A rounds?"
 
-Generated Cypher:  
+Generated Cypher (from LLM):  
 ```cypher
 MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound {roundType:'Series A'})
 RETURN DISTINCT i.name;
+
 ```
+
+Implementation Note
+
+Instead of using LangChain’s built-in CypherQAChain, the project uses a custom flow (PromptTemplate + ChatOpenAI + Neo4jGraph) to generate and run queries.
+
+This allows finer control over prompt design, query sanitization, and error handling in Cloud Run deployments.
 ---
 
 ## 9. Non-Functional Considerations 
