@@ -127,6 +127,12 @@ RETURN DISTINCT i.name;
 - **Cost:** Minimal cost footprint by leveraging free tiers (Cloud Run free tier + Neo4j Aura free tier).  
 - **Portability:** System can be deployed locally or on any cloud supporting Docker containers.  
 - **Extensibility:** Easy to extend schema with new node labels (e.g., `Accelerator`, `Advisor`).  
+- **Security:**  
+  - API keys and database credentials are managed via environment variables (never stored in source code).  
+  - Cloud Run secret manager or GCP environment variables can be used to inject sensitive values securely.  
+  - HTTPS is enforced on Cloud Run endpoints.  
+  - Neo4j Aura uses encrypted connections (`neo4j+s://`).  
+  - Access control is managed through database user authentication (username/password).  
 
 ---
 
