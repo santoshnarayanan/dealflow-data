@@ -1,11 +1,12 @@
 // backend/ai/index.js
+import '../loadEnv.js';
+
 import express from "express";
 import bodyParser from "body-parser";
 import aiRoutes from "./routes/aiRoutes.js";
 import { initLangChain } from "./services/langchainService.js";
 import dotenv from "dotenv";
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.AI_PORT;

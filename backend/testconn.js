@@ -1,6 +1,7 @@
 import neo4j from "neo4j-driver";
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+dotenv.config({ path: path.resolve("../.env") });
 
 console.log("🔍 Using credentials:");
 console.log({
