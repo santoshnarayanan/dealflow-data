@@ -1,0 +1,65 @@
+services:
+  weaviate:
+    image: semitechnologies/weaviate:1.25.4
+    container_name: weaviate
+    restart: unless-stopped
+    ports:
+      - "8080:8080"          # direct access for dev (curl, Postman, LangChain)
+    volumes:
+      - ./data/weaviate:/var/lib/weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: "25"
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      CLUSTER_HOSTNAME: "node1"
+      DISABLE_TELEMETRY: "true"   # optional, nice for local dev
+    command:
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "--scheme"
+      - "http"
+    networks:
+      - dealflow-net
+      - traefik-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.weaviate.rule=Host(`weaviate.localhost`)"
+      - "traefik.http.routers.weaviate.entrypoints=web"
+      - "traefik.http.services.weaviate.loadbalancer.server.port=8080"
+
+  redis:
+    image: redis:7
+    container_name: dealflow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    networks:
+      - dealflow-net
+
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"        # reverse proxy entrypoint
+      - "8081:8080"    # Traefik dashboard at http://localhost:8081
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--api.dashboard=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - traefik-proxy
+
+networks:
+  dealflow-net:
+    driver: bridge
+  traefik-proxy:
+    driver: bridge
