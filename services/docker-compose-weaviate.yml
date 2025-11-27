@@ -4,7 +4,7 @@ services:
     container_name: weaviate
     restart: unless-stopped
     ports:
-      - "8080:8080"          # direct access for dev (curl, Postman, LangChain)
+      - "8080:8080"
     volumes:
       - ./data/weaviate:/var/lib/weaviate
     environment:
@@ -12,22 +12,11 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
       PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
       CLUSTER_HOSTNAME: "node1"
-      DISABLE_TELEMETRY: "true"   # optional, nice for local dev
-    command:
-      - "--host"
-      - "0.0.0.0"
-      - "--port"
-      - "8080"
-      - "--scheme"
-      - "http"
+      DISABLE_TELEMETRY: "true"
+      ENABLE_MODULES: "text2vec-openai"
+      OPENAI_APIKEY: "${OPENAI_API_KEY}"
     networks:
       - dealflow-net
-      - traefik-proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.weaviate.rule=Host(`weaviate.localhost`)"
-      - "traefik.http.routers.weaviate.entrypoints=web"
-      - "traefik.http.services.weaviate.loadbalancer.server.port=8080"
 
   redis:
     image: redis:7
