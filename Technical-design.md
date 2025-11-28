@@ -105,6 +105,11 @@ backend/
 │
 └── ingest/
     ├── weaviateIngest.js      <-- NEW (Phase 2 ingestion)
+
+
+<!-- 🔍 2. Backend Internal Architecture (Phase 2 Completed) -->
+![Request Sequence Placeholder](./images/Phase2a-Backend-Archiecture.png)
+
 ```
 
 ### Directory Summary
@@ -125,14 +130,14 @@ backend/
 
 ## 5. Request Flow
 
-<!-- 🔍 2. Backend Internal Architecture (Phase 2 Completed) -->
-
 1. User sends request (`/startups`, `/investors`, or AI query).  
 2. Express route triggers corresponding service.  
 3. Service executes Cypher query via Neo4j driver.  
 4. Response returned to client.
 
-![Request Sequence Placeholder](./images/Phase2a-Backend-Archiecture.png)
+<!-- 🧠 3. Hybrid AI Pipeline (Graph + Vector + LLM Reasoning) -->
+
+![LangChain Workflow Placeholder](./images/Phase2a-Hybrid-AI-Sequence.png)
 
 ---
 
@@ -179,15 +184,7 @@ LangChain integrates semantic reasoning, Cypher generation, and hybrid retrieval
 
 ---
 
-### 8.2 Workflow Overview
-
-<!-- 🧠 3. Hybrid AI Pipeline (Graph + Vector + LLM Reasoning) -->
-
-![LangChain Workflow Placeholder](./images/Phase2a-Hybrid-AI-Sequence.png)
-
----
-
-### 8.3 Detailed Flow (Phase 2)
+### 8.2 Detailed Flow (Phase 2)
 
 1. User submits natural language question  
 2. Weaviate performs vector or hybrid search  
@@ -195,9 +192,11 @@ LangChain integrates semantic reasoning, Cypher generation, and hybrid retrieval
 4. LangChain fuses both retrievals  
 5. Backend returns combined semantic + graph result  
 
+
+![LangChain Workflow Placeholder](./images/Phase2a-vector-graph-retervial-workflow.png)
 ---
 
-### 8.4 Example Query
+### 8.3 Example Query
 
 **User Question:**  
 > Which investors participated in Series A fintech startups similar to Stripe?
