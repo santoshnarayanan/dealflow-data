@@ -16,7 +16,7 @@ The Dealflow Data Platform includes **Neo4j (graph database)** and **Weaviate (v
 
 <!-- 🚀 1. High-Level System Architecture (Frontend + Backend + Databases) -->
 
-![High-Level Architecture Placeholder](./images/high-level-architecture.png)
+![High-Level Architecture Placeholder](./images/Phase2a-HL-Diagram.png)
 
 ### Components
 
@@ -64,7 +64,7 @@ The Dealflow Data Platform includes **Neo4j (graph database)** and **Weaviate (v
 - `(Investor)-[:INVESTED_IN]->(FundingRound)`
 - `(Startup)-[:HAS_INVESTOR]->(Investor)`
 
-![Nodes and Relationships Placeholder](./images/graph-data-model.png)
+![Nodes and Relationships Placeholder](./images/Phase2a-Neo4j-Models.png)
 
 ---
 
@@ -132,7 +132,7 @@ backend/
 3. Service executes Cypher query via Neo4j driver.  
 4. Response returned to client.
 
-![Request Sequence Placeholder](./images/request-sequence.png)
+![Request Sequence Placeholder](./images/Phase2a-Backend-Archiecture.png)
 
 ---
 
@@ -183,7 +183,7 @@ LangChain integrates semantic reasoning, Cypher generation, and hybrid retrieval
 
 <!-- 🧠 3. Hybrid AI Pipeline (Graph + Vector + LLM Reasoning) -->
 
-![LangChain Workflow Placeholder](./images/langchain-workflow.png)
+![LangChain Workflow Placeholder](./images/Phase2a-Hybrid-AI-Sequence.png)
 
 ---
 
