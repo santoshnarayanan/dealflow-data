@@ -2,7 +2,8 @@ import driver from "../config/neo4j.js";
 import neo4j from "neo4j-driver";
 
 export async function getStartups(limit = 20) {
-  const session = driver.session();
+  const session = driver.session({ database: process.env.NEO4J_DATABASE });
+  
   try {
     const result = await session.run(
       "MATCH (s:Startup) RETURN s LIMIT $limit",
@@ -19,7 +20,8 @@ export async function searchStartupsByIndustry(industry) {
     throw new Error("Industry parameter is required");
   }
 
-  const session = driver.session();
+  const session = driver.session({ database: process.env.NEO4J_DATABASE });
+
   try {
     const result = await session.run(
       `MATCH (s:Startup)

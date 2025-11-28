@@ -2,7 +2,8 @@ import driver from "../config/neo4j.js";
 import neo4j from "neo4j-driver";
 
 export async function getInvestors(limit = 10) {
-  const session = driver.session();
+  const session = driver.session({ database: process.env.NEO4J_DATABASE });
+
   try {
     const result = await session.run(
       "MATCH (i:Investor) RETURN i LIMIT $limit",

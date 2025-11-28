@@ -13,6 +13,8 @@ import driver from "./config/neo4j.js";
 import aiRoutes from "./ai/routes/aiRoutes.js";
 import { initLangChain } from "./ai/services/langchainService.js";
 
+import vectorRoutes from "./routes/vector.js";
+
 const app = express();
 
 app.use(cors());
@@ -24,6 +26,7 @@ app.use("/startups", startupRoutes);
 app.use("/investors", investorRoutes);
 app.use("/search", searchRoutes);
 app.use("/ai", aiRoutes); // ✅ AI routes (e.g. POST /ai/ai-query)
+app.use("/vector", vectorRoutes);
 
 // Health check
 app.get("/health", (req, res) => res.json({ status: "ok" }));

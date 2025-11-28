@@ -81,3 +81,4 @@ pip-selfcheck.json
 combine_project_code.sh
 services/data
 services/0.0.0.0:8080
+frontend/src/pages

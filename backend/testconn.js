@@ -16,7 +16,7 @@ const driver = neo4j.driver(
 );
 
 try {
-  const session = driver.session();
+  const session = driver.session({ database: process.env.NEO4J_DATABASE });
   const result = await session.run("RETURN 'Connection OK' AS msg");
   console.log("✅ Neo4j says:", result.records[0].get("msg"));
   await session.close();
