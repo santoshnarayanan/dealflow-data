@@ -1,72 +1,91 @@
+
 # Technical Design
 
 ## 1. Overview
-The Dealflow Data Platform now includes Neo4j (graph database) and Weaviate (vector database) to support:
+The Dealflow Data Platform includes **Neo4j (graph database)** and **Weaviate (vector database)** to support:
 
 - Graph queries (relationships, paths)
 - Vector similarity (semantic search)
 - Hybrid search (BM25 + vector)
 - Combined graph–vector RAG responses (LangChain)
-- The backend integrates both DBs into a unified API powering the React frontend and optional AI sandbox interfaces (Gradio / Chainlit).
+- A unified backend integrating both databases into a single API powering the React frontend and optional AI sandbox interfaces (Gradio / Chainlit)
 
 ---
 
 ## 2. Architecture
 
-![HL Architecture with Weaviate](./images/Phase2-Weaviate-HL.png)
+<!-- 🚀 1. High-Level System Architecture (Frontend + Backend + Databases) -->
+
+![High-Level Architecture Placeholder](./images/high-level-architecture.png)
 
 ### Components
-- **Frontend (planned)**  
-  - React + TypeScript for user interface  
+
+- **Frontend (React + TypeScript)**  
+  Interface for startups, investors, and AI-based interactions.
 
 - **Backend (Express.js)**  
-  - REST API endpoints (`/startups`, `/investors`, `/search`, `/ai-query`)  
-  - Connects to Neo4j database  
-  - Business logic in `services/` layer  
+  - REST API endpoints such as `/startups`, `/investors`, `/search`, `/ai-query`
+  - Connects to Neo4j and Weaviate
+  - Business logic implemented in the `services/` layer
 
-- **Database (Neo4j)**  
+- **Database: Neo4j (Graph DB)**  
   - Stores startups, investors, and funding rounds as a connected graph  
-  - Optimized for relationship queries  
+  - Optimized for relationship queries and complex traversals
+
+- **Vector Database: Weaviate**  
+  - Stores embeddings for semantic similarity search  
+  - Supports hybrid queries (BM25 + vector)
 
 - **AI Layer (LangChain + OpenAI)**  
   - Translates natural language questions into Cypher queries  
-  - Executes against Neo4j and returns structured answers  
+  - Performs semantic search and hybrid retrieval  
+  - Generates structured answers
 
 ---
 
 ## 3. Data Model
 
+<!-- 🔎 4. Detailed Neo4j Data Model (Your dealflow graph) -->
+
 ### Node Labels
+
 - **Startup**
   - Properties: `id`, `name`, `industry`, `foundedYear`
+
 - **Investor**
   - Properties: `id`, `name`, `type`, `location`
+
 - **FundingRound**
   - Properties: `id`, `roundType`, `amount`, `year`
 
 ### Relationships
+
 - `(Startup)-[:RAISED]->(FundingRound)`
 - `(Investor)-[:INVESTED_IN]->(FundingRound)`
+- `(Startup)-[:HAS_INVESTOR]->(Investor)`
 
-![Nodes and Relationships](./images/visualisation.png)
+![Nodes and Relationships Placeholder](./images/graph-data-model.png)
 
-### Weaviate (Vector)
+---
 
-- **New classes**:
-  - Startup
-    name (text)
-      industry (text)
-    description (text)
-    vector (auto-generated using OpenAI model text-embedding-3-small)
+### Weaviate (Vector Schema)
 
-  - Investor
-    name
-    type
-    description
-    vector (auto-generated)
+- **Startup**
+  - `name` (text)  
+  - `industry` (text)  
+  - `description` (text)  
+  - Vector auto-generated using **OpenAI text-embedding-3-small**
+
+- **Investor**
+  - `name`  
+  - `type`  
+  - `description`  
+  - Vector auto-generated  
+
 ---
 
 ## 4. Backend Modules
+
 ```bash
 backend/
 ├── services/
@@ -86,222 +105,172 @@ backend/
 │
 └── ingest/
     ├── weaviateIngest.js      <-- NEW (Phase 2 ingestion)
-
 ```
 
-- **routes/**  
-  Defines REST endpoints (`/startups`, `/investors`, `/search`).  
+### Directory Summary
 
-- **services/**  
-  Contains business logic and Cypher queries (e.g., `startupService.js`, `investorService.js`).  
+- **routes/**
+  - Defines REST endpoints
 
-- **ai/**  
-  Dedicated LangChain integration (`langchainService.js`) + schema for Cypher generation.  
+- **services/**
+  - Contains business logic and Cypher queries
 
-- **middlewares/**  
-  Common middleware such as error handling.  
+- **ai/**
+  - LangChain integration and graph schema
+
+- **middlewares/**
+  - Error handling and shared middleware
 
 ---
 
 ## 5. Request Flow
 
-1. User sends request (`/startups` or AI query).  
-2. Express route calls corresponding service.  
+<!-- 🔍 2. Backend Internal Architecture (Phase 2 Completed) -->
+
+1. User sends request (`/startups`, `/investors`, or AI query).  
+2. Express route triggers corresponding service.  
 3. Service executes Cypher query via Neo4j driver.  
-4. Results returned to client.  
-![Sequence diagram](./images/Phase2-Request-Flow.png)
+4. Response returned to client.
 
----
-## 6. Tech Stack 
-- **Frontend:** React + TypeScript tested and deployed on GCP free tier
-- **Backend:** Node.js with Express.js  tested and deployed on GCP free tier
-- **Database:** 
-      Neo4j Aura Free Tier (cloud) or Neo4j Desktop
-      Weaviate docker setup  (vector)
-- **AI Layer:** LangChain + OpenAI (Cypher query generation)  
-- **Deployment:** Google Cloud Run (containerized backend)  
+![Request Sequence Placeholder](./images/request-sequence.png)
 
 ---
 
+## 6. Tech Stack
+
+- **Frontend:** React + TypeScript (GCP deployment)
+- **Backend:** Node.js (Express.js) (GCP deployment)
+- **Database:**  
+  - Neo4j Aura Free Tier or Neo4j Desktop  
+  - Weaviate Docker (vector DB)
+- **AI Layer:** LangChain + OpenAI  
+- **Deployment:** Google Cloud Run (containerized backend)
+
+---
 
 ## 7. Weaviate Usage
 
 | Category             | Details                          |
 |----------------------|----------------------------------|
-| **Module**           | `text2vec-openai`               |
-| **Classes (Schema)** | `Startup`, `Investor`           |
+| **Module**           | `text2vec-openai`                |
+| **Classes**          | `Startup`, `Investor`            |
 | **Search Types**     | `nearText`, `nearVector`, `hybrid`, `BM25` |
-
- ---
-
-
-## 8. LangChain Usage
-
-LangChain is integrated into the backend to power **semantic reasoning**,  
-**Cypher query generation**, and **hybrid RAG retrieval** by combining:
-
-- **Weaviate** → vector similarity search  
-- **Neo4j** → graph traversal  
-- **OpenAI LLMs** → reasoning + answer synthesis  
 
 ---
 
-### **8.1 Capabilities Enabled by LangChain**
-- Natural-language → Cypher conversion  
-- Natural-language → vector search query  
-- Graph-aware RAG (LLM uses Neo4j paths + Weaviate vectors)  
+## 8. LangChain Usage
+
+LangChain integrates semantic reasoning, Cypher generation, and hybrid retrieval via:
+
+- **Weaviate** → vector similarity  
+- **Neo4j** → graph traversal  
+- **OpenAI** → reasoning & synthesis  
+
+---
+
+### 8.1 Capabilities
+
+- Natural-language → Cypher  
+- Natural-language → vector search  
 - Hybrid retrieval (semantic + graph + metadata)  
-- Query validation & sanitization  
+- Graph-aware RAG  
+- Query validation  
 - Multi-step reasoning for investor/startup intelligence  
 
 ---
 
-## **8.2 Workflow Overview**
+### 8.2 Workflow Overview
 
-![Workflow diagram](./images/Phase2-LangChain-Workflow.png)
+<!-- 🧠 3. Hybrid AI Pipeline (Graph + Vector + LLM Reasoning) -->
 
----
-
-### **8.3 Detailed Flow (Phase 2)**
-
-1. **User submits natural language question**  
-   Example:  
-   _"Which fintech startups are similar to Stripe?"_
-
-2. **Vector Search (Weaviate)**  
-   The backend performs:
-   - `nearText` (semantic)
-   - or `hybrid` (BM25 + vector fusion)
-
-3. **Graph Traversal (Neo4j)**  
-   For the matched startups/investors, Neo4j is queried for:
-   - relationships  
-   - funding history  
-   - shared investors  
-   - ecosystem graph context  
-
-4. **LangChain Fusion**  
-   LangChain merges:
-   - semantic search results  
-   - graph traversal results  
-   - user question  
-   - system-level prompts  
-
-   The LLM produces a structured explanation or summary.
-
-5. **Return Combined Result**  
-   Backend returns:
-   - vector matches  
-   - graph metadata  
-   - LLM-generated reasoning  
+![LangChain Workflow Placeholder](./images/langchain-workflow.png)
 
 ---
 
-### **8.4 Example Query (Phase 2)**
+### 8.3 Detailed Flow (Phase 2)
+
+1. User submits natural language question  
+2. Weaviate performs vector or hybrid search  
+3. Neo4j retrieves graph relationships  
+4. LangChain fuses both retrievals  
+5. Backend returns combined semantic + graph result  
+
+---
+
+### 8.4 Example Query
 
 **User Question:**  
-> "Which investors participated in Series A fintech startups similar to Stripe?"
+> Which investors participated in Series A fintech startups similar to Stripe?
 
 **Backend Process:**
-- Weaviate → find startups similar to “Stripe”  
-- Neo4j → retrieve investors involved in Series A rounds  
-- LangChain → merge results + generate final summary  
 
-**Example Cypher generated by LangChain:**
+- Weaviate → find similar startups  
+- Neo4j → fetch Series A investors  
+- LangChain → merge & summarize  
+
+**Generated Cypher Example:**
 
 ```cypher
 MATCH (s:Startup {industry:'Fintech'})-[:RAISED]->(f:FundingRound {roundType:'Series A'})
 MATCH (i:Investor)-[:INVESTED_IN]->(f)
 RETURN DISTINCT s.name, i.name;
-
-
-## 9. Non-Functional Considerations  
-
-### **Scalability**
-- Cloud Run autoscaling handles REST API load automatically.  
-- Weaviate supports horizontal scaling (sharding + replication) when moving beyond local Docker.  
-- Neo4j Aura provides managed high-availability clusters for graph workloads.  
-- Vector search scales with HNSW index configuration (ef, maxConnections).
-
-### **Performance**
-- Vector queries (`nearText`, `hybrid`) use HNSW indexing for millisecond retrieval.  
-- Graph traversal performance depends on index usage (`CREATE INDEX` on key properties).  
-- Backend caches frequent queries (optional in future phases).  
-- OpenAI embeddings cached locally to reduce repeated cost and latency.
-
-### **Cost**
-- Local Weaviate = free.  
-- Neo4j Aura Free Tier for graph.  
-- Cloud Run free tier for backend hosting.  
-- OpenAI embedding + LLM usage only billed per request.  
-- Hybrid search reduces overuse of LLM calls by retrieving relevant context first.
-
-### **Reliability**
-- Weaviate vector index stored on persistent volume (`services/data/weaviate`).  
-- Neo4j Aura provides automated backups and fault tolerance.  
-- Docker local setup provides deterministic reproducibility for development.
-
-### **Portability**
-- Entire system is containerized and runs on:  
-  - Local machine (Docker)  
-  - Cloud Run  
-  - GCP GKE  
-  - AWS ECS / EC2  
-  - Any infrastructure that supports Docker Compose  
-- Codebase uses environment-based configuration for portability.
-
-### **Extensibility**
-- Easy to add new vector-enabled classes (e.g., `Accelerator`, `Advisor`, `Founder`).  
-- Graph schema can be extended with new relationships without breaking existing queries.  
-- Backend supports modular `services/` pattern to add new vector or graph operations.
-
-### **Security**
-- API keys (OpenAI) and DB credentials stored in environment variables or Secret Manager.  
-- Weaviate anonymous access is allowed only in local dev; production requires API key or OIDC.  
-- HTTPS is enforced at Cloud Run level.  
-- Neo4j Aura uses encrypted `neo4j+s://` connections.  
-- No secrets stored in Git — fully environment-driven.  
-- DOS/abuse protection possible at Cloud Run (rate limiting, IAM).  
-
-### **Data Consistency**
-- Vector DB (Weaviate) and Graph DB (Neo4j) are eventually consistent.  
-- Ingestion scripts ensure data is inserted in both systems in a coordinated manner.  
-- Future Phase: add background sync job to validate consistency.
-
-### **Observability**
-- Weaviate provides `/v1/.well-known/ready` and `/v1/.well-known/live`.  
-- Cloud Run logs available in GCP Logging.  
-- Neo4j Aura provides Health & Query monitoring.  
-- Optional: integrate Prometheus/Grafana (Phase 3).
-
+```
 
 ---
 
-## 10. License & Acknowledgements  
-- Licensed under [MIT License](./LICENSE).  
+## 9. Non-Functional Considerations
 
-- This project acknowledges the contributions of the following open-source technologies and frameworks:
+### Scalability
+- Cloud Run autoscaling  
+- Managed Neo4j Aura clusters  
+- Weaviate sharding + replication  
 
-  - **Weaviate** (BSD-3-Clause License)  
-    - https://github.com/weaviate/weaviate  
-    - Used for vector search, hybrid search, and embedding storage.  
+### Performance
+- HNSW indexing for Weaviate  
+- Neo4j indexes on key properties  
+- Optional backend caching  
 
-  - **LangChain** (MIT License)  
-    - Framework for LLM orchestration and RAG pipelines.  
+### Cost
+- Local Weaviate = free  
+- Neo4j Aura Free Tier  
+- Cloud Run Free Tier  
+- Pay-per-use OpenAI  
 
-  - **Neo4j** (GPLv3 Community Edition / Commercial Enterprise)  
-    - Graph database for relationship intelligence and analytics.  
+### Reliability
+- Persistent volumes for vector index  
+- Neo4j Aura automated backups  
 
-  - **React** (MIT License)  
-    - Frontend UI framework.
+### Portability
+- Fully containerized  
+- Works on Docker, Cloud Run, GKE, ECS, EC2  
 
-  - **Node.js** (MIT License)  
-    - Backend runtime environment.
+### Extensibility
+- Add new vector classes  
+- Extend Neo4j schema easily  
 
-  - **Docker** (Apache 2.0 License)  
-    - Containerization platform for local development and deployment.
+### Security
+- Env-based secrets  
+- TLS enforced  
+- Rate limiting possible  
 
-  - **OpenAI Models** (Proprietary — API usage license)  
-    - Used for embeddings, reasoning, and generative responses.
+### Data Consistency
+- Coordinated ingestion between Neo4j + Weaviate  
 
+### Observability
+- Weaviate readiness endpoints  
+- Cloud Run logs  
+- Neo4j metrics  
 
+---
+
+## 10. License & Acknowledgements
+
+- Licensed under **MIT License**  
+- Uses open-source technologies:
+  - Weaviate (BSD-3-Clause)
+  - LangChain (MIT)
+  - Neo4j (GPLv3 CE / Commercial)
+  - React (MIT)
+  - Node.js (MIT)
+  - Docker (Apache 2.0)
+  - OpenAI APIs (Proprietary)

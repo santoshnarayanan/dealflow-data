@@ -1,68 +1,98 @@
+
 # Dealflow Data Platform
 
-- A graph-based platform to manage **startups, investors, and funding rounds** using **Neo4j** and **Express.js** backend.
-- This project integrates **LangChain** to allow **natural language questions** (e.g., *“Which investors funded RoboWorks?”*) to be automatically translated into **Cypher queries**.
-- Also refer **Technical design document** in file **Technical-design.md** 
+- A graph-based platform to manage **startups, investors, and funding rounds** using **Neo4j** and an **Express.js** backend.  
+- Integrates **LangChain** to allow natural language questions (e.g., *“Which investors funded RoboWorks?”*) to be automatically translated into **Cypher queries**.  
+- Includes **Weaviate** for vector search (semantic + hybrid).  
+- Refer to the full **Technical Design** document in `Technical-design.md`.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
 ## 📑 Table of Contents
-- [🚀 Setup Guide](#-setup-guide)
-- [📥 Data Import Guide (Neo4j)](#-data-import-guide-neo4j)
-- [📋 Query Checklist (Cypher)](#-query-checklist-cypher)
-  - [🏢 Startups](#-startups)
-  - [💼 Investors](#-investors)
-  - [💰 Funding Rounds](#-funding-rounds)
-- [🌐 API Usage](#-api-usage)
-- [✨ Features](#-features) 
-- [🛠 Tech Stack](#-tech-stack) 
-- [🤝 Contributing](#-contributing) 
-- [📜 License](#-license) 
-- [🙏 Acknowledgements](#-acknowledgements) 
-- [📌 Notice](#-notice) 
+- [Dealflow Data Platform](#dealflow-data-platform)
+  - [📑 Table of Contents](#-table-of-contents)
+  - [🚀 Setup Guide](#-setup-guide)
+    - [1. Prerequisites](#1-prerequisites)
+    - [2. Clone Repository](#2-clone-repository)
+    - [3. Install Dependencies](#3-install-dependencies)
+    - [4. Configure Environment Variables](#4-configure-environment-variables)
+  - [🧠 Vector DB Setup (Weaviate)](#-vector-db-setup-weaviate)
+    - [1. Start Weaviate via Docker Compose](#1-start-weaviate-via-docker-compose)
+    - [2. Verify Weaviate](#2-verify-weaviate)
+    - [3. Create Schema](#3-create-schema)
+    - [4. Ingest Data](#4-ingest-data)
+    - [🕹 Explore Data (GUI Options)](#-explore-data-gui-options)
+  - [🥇 Run Backend](#-run-backend)
+    - [Your API is available at:](#your-api-is-available-at)
+  - [📥 Data Import Guide (Neo4j)](#-data-import-guide-neo4j)
+    - [1. Place CSV Files](#1-place-csv-files)
+    - [2. Import Commands (Run in Neo4j Browser)](#2-import-commands-run-in-neo4j-browser)
+  - [📋 Query Checklist (Cypher)](#-query-checklist-cypher)
+    - [🏢 Startups](#-startups)
+    - [💼 Investors](#-investors)
+    - [💰 Funding Rounds](#-funding-rounds)
+  - [🌐 API Usage](#-api-usage)
+    - [1. List Startups](#1-list-startups)
+    - [2. List Investors](#2-list-investors)
+    - [3. Search by Industry](#3-search-by-industry)
+    - [4. AI Query](#4-ai-query)
+  - [✨ Features](#-features)
+  - [🛠 Tech Stack](#-tech-stack)
+  - [🤝 Contributing](#-contributing)
+  - [📜 License](#-license)
+  - [🙏 Acknowledgements](#-acknowledgements)
+  - [📌 Notice](#-notice)
+
 ---
 
 ## 🚀 Setup Guide
 
 ### 1. Prerequisites
-- **Node.js** (v18+ recommended)  
-- **Neo4j Aura** or **Neo4j Desktop** (v5.x)  
+- **Node.js** (v18 or higher)
+- **Neo4j Aura** or **Neo4j Desktop (v5.x)**
 - **npm** or **yarn**
 
-### 2. Clone Repo
-```
+### 2. Clone Repository
+```bash
 git clone https://github.com/your-org/dealflow-data.git
 cd dealflow-data/backend
 ```
+
 ### 3. Install Dependencies
-```
+```bash
 npm install
 ```
 
-### 4. Configure environment
+### 4. Configure Environment Variables
+Create `.env` file in `backend/`:
+
 ```
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
+NEO4J_URI=neo4j+s://xxxx.databases.neo4j.io
+NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=your_password
 PORT=3000
+AI_PORT=3001
+OPENAI_API_KEY=your_openai_key
 ```
+
+---
 
 ## 🧠 Vector DB Setup (Weaviate)
 
 ### 1. Start Weaviate via Docker Compose
-```
+```bash
 docker compose -f services/docker-compose-weaviate.yml up -d
 ```
 
 ### 2. Verify Weaviate
-```
+```bash
 curl http://localhost:8080/v1/meta
 ```
 
-### 3. Create Schema (Startup + Investor)
-```
+### 3. Create Schema
+```bash
 curl -X POST http://localhost:8080/v1/schema \
   -H "Content-Type: application/json" \
   -d @startup.json
@@ -73,44 +103,43 @@ curl -X POST http://localhost:8080/v1/schema \
 ```
 
 ### 4. Ingest Data
-```
+```bash
 node backend/ingest/weaviateIngest.js
 ```
 
-### 🕹 Explore Data in GUI
-
-Use either:
-
-- **Weaviate VS Code Extension (Cursor)**
+### 🕹 Explore Data (GUI Options)
 - **Weaviate Studio Desktop App**
+- **Weaviate VS Code Extension**
 
-These tools let you inspect:
-
-- **Objects**
-- **Embeddings (vectors)**
-- **Schema**
-- **nearText / nearVector / hybrid queries**
-
+Inspect:
+- Objects  
+- Embeddings  
+- Schema  
+- nearText / nearVector / Hybrid Queries  
 
 ---
-### 5.  Run Backend
-```
+
+## 🥇 Run Backend
+
+```bash
 npm start
 ```
 
-### 6.  Your API should now be available at:
+### Your API is available at:
 ```
-- http://localhost:3000/startups
-- http://localhost:3000/investors
-- http://localhost:3000/search/semantic
-- http://localhost:3000/search/hybrid
+http://localhost:3000/startups
+http://localhost:3000/investors
+http://localhost:3000/search/startups
+http://localhost:3000/ai/ai-query
 ```
+
+---
 
 ## 📥 Data Import Guide (Neo4j)
 
-### 1. Place CSVs
+### 1. Place CSV Files
+Copy CSVs into Neo4j `import/` directory:
 
-Copy your CSVs into Neo4j import/ directory. Example:
 ```
 neo4j/import/startups.csv
 neo4j/import/investors.csv
@@ -118,15 +147,9 @@ neo4j/import/funding_rounds.csv
 neo4j/import/relationships.csv
 ```
 
-### 2. Import Commands
+### 2. Import Commands (Run in Neo4j Browser)
 
-Run in Neo4j Browser 
-```
-http://localhost:7474
-```
-- cypher script
-
-```
+```cypher
 // Import Startups
 LOAD CSV WITH HEADERS FROM 'file:///startups.csv' AS row
 MERGE (s:Startup {id: row.id})
@@ -153,150 +176,130 @@ MATCH (f:FundingRound {id: row.fundingRoundId})
 MERGE (i)-[:INVESTED_IN]->(f);
 ```
 
+---
+
 ## 📋 Query Checklist (Cypher)
+
 ### 🏢 Startups
-- cypher
-```
-// Show all startups in fintech industry
+```cypher
 MATCH (s:Startup {industry: 'Fintech'}) RETURN s;
 
-// Which startups raised more than $10M
 MATCH (s:Startup)-[:RAISED]->(f:FundingRound)
 WHERE f.amount > 10000000
 RETURN s.name, f.amount;
 
-// Startups that raised Series A in 2023
 MATCH (s:Startup)-[:RAISED]->(f:FundingRound {roundType:'Series A', year:2023})
 RETURN s.name;
 ```
 
 ### 💼 Investors
-- cypher
-```
-// Which investors funded FinAI
-MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound)<-[:RAISED]-(s:Startup {name:'FinAI'})
+```cypher
+MATCH (i:Investor)-[:INVESTED_IN]->(f)<-[:RAISED]-(s:Startup {name:'FinAI'})
 RETURN i.name;
 
-// Investors who backed healthcare startups
 MATCH (i:Investor)-[:INVESTED_IN]->(f)<-[:RAISED]-(s:Startup {industry:'Healthcare'})
 RETURN DISTINCT i.name;
 
-// Investors in Series B
 MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound {roundType:'Series B'})
 RETURN DISTINCT i.name;
 ```
+
 ### 💰 Funding Rounds
-- cypher
-```
-// Funding rounds in 2023
+```cypher
 MATCH (s:Startup)-[:RAISED]->(f:FundingRound {year:2023})
 RETURN s.name, f.roundType, f.amount;
 
-// Series A investors
 MATCH (i:Investor)-[:INVESTED_IN]->(f:FundingRound {roundType:'Series A'})
 RETURN i.name;
-
 ```
+
+---
 
 ## 🌐 API Usage
+
 ### 1. List Startups
-```
+```bash
 curl http://localhost:3000/startups
-```
-- response json
-```
-[
-  { "name": "FinAI", "industry": "Fintech", "foundedYear": 2022 },
-  { "name": "MediCareX", "industry": "Healthcare", "foundedYear": 2021 }
-]
 ```
 
 ### 2. List Investors
-```
+```bash
 curl http://localhost:3000/investors
 ```
 
-### 3. Search Startups by Industry
-```
+### 3. Search by Industry
+```bash
 curl "http://localhost:3000/search/startups?industry=Fintech"
 ```
 
-### 4. AI Query (LangChain)
-```
-curl -X POST http://localhost:3000/ai-query \
+### 4. AI Query
+```bash
+curl -X POST http://localhost:3000/ai/ai-query \
   -H "Content-Type: application/json" \
   -d '{"question": "Which investors funded RoboWorks?"}'
 ```
 
-## ✨ Features
-- Graph-based data model for startups, investors, and funding rounds  
-- Semantic search using **Weaviate vector embeddings** (OpenAI)  
-- Hybrid search combining **BM25 + vector similarity**  
-- AI-powered **natural language → Cypher** using LangChain  
-- RAG pipeline combining vector search + graph traversal + LLM reasoning  
-- RESTful API endpoints for startups, investors, search, and AI queries  
-- Easy CSV import for bulk loading into Neo4j  
-- Deployable on **GCP Cloud Run** with autoscaling  
-- Extendable schema for additional domains (Founder, Accelerator, Advisor, etc.)  
-- Works with **Neo4j Aura Free Tier** and **local Docker Weaviate**  
+---
 
+## ✨ Features
+
+- Graph-based model for startups, investors, and funding rounds  
+- Semantic search using **Weaviate vector embeddings**  
+- Hybrid search combining BM25 + vector similarity  
+- AI-powered **natural language → Cypher** translator  
+- RAG pipeline integrating Neo4j + Weaviate + OpenAI  
+- REST API endpoints for data access & search  
+- CSV import pipeline for Neo4j  
+- Deployable on **GCP Cloud Run**  
+- Extendable domain model (Founders, Advisors, Accelerators, etc.)
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Frontend:** React + TypeScript + Redux Toolkit (Phase 3), optional AI UI (Gradio / Chainlit)  
+- **Frontend:** React + TypeScript (Phase 3)  
 - **Backend:** Node.js (Express.js)  
-- **Graph Database:** Neo4j AuraDB / Neo4j Desktop  
-- **Vector Database:** Weaviate (OpenAI vectorizer module)  
-- **AI Layer:** LangChain (LLM → Cypher, hybrid graph-vector RAG)  
-- **Embeddings:** OpenAI text-embedding-3-small  
-- **Deployment:** Docker, Google Cloud Run  
-- **Developer Tools:** Cursor IDE, Weaviate VS Code Extension  
-
+- **Graph DB:** Neo4j Aura / Desktop  
+- **Vector DB:** Weaviate (text2vec-openai)  
+- **AI Layer:** LangChain + OpenAI  
+- **Deployment:** Docker + Cloud Run  
+- **Dev Tools:** Cursor IDE, VS Code Weaviate plugin  
 
 ---
 
 ## 🤝 Contributing
-Contributions are welcome!  
-1. Fork the repository  
-2. Create your feature branch (`git checkout -b feature/YourFeature`)  
-3. Commit your changes (`git commit -m 'Add some feature'`)  
-4. Push to the branch (`git push origin feature/YourFeature`)  
+1. Fork the repo  
+2. Create a feature branch  
+3. Commit your changes  
+4. Push to your branch  
 5. Open a Pull Request  
 
-Please check `Technical-design.md` before proposing major architectural changes.  
+Refer to `Technical-design.md` before major architectural changes.
 
 ---
 
 ## 📜 License
-This project is licensed under the [MIT License](LICENSE).  
+Licensed under the [MIT License](LICENSE).
 
 ---
 
 ## 🙏 Acknowledgements
-This project uses the following open-source libraries and frameworks:  
+This project uses:
 
-- [LangChain](https://github.com/langchain-ai/langchain) MIT License  
-- [Neo4j](https://github.com/neo4j/neo4j) GPL v3 (Community Edition) / Commercial options (Enterprise & Aura) 
-- [React](https://github.com/facebook/react) MIT License 
-- [Node.js](https://github.com/nodejs/node) MIT License  
+- LangChain (MIT)  
+- Neo4j (GPL v3 / Commercial)  
+- React (MIT)  
+- Node.js (MIT)  
+- Weaviate (BSD-3-Clause)
 
-We gratefully acknowledge the work of these communities. 
-
-ℹ️ Note on licenses:  
-- MIT (used by LangChain, React, Node.js) is a permissive license — you can reuse the code freely as long as you credit the original author.  
-- GPL v3 (used by Neo4j Community Edition) is a copyleft license — if you modify and distribute the database itself, you must also share your changes under GPL.  
-
+Special thanks to open‑source contributors.
 
 ---
 
 ## 📌 Notice
 
-Copyright © 2025 [Santosh Narayanan](https://github.com/santoshnarayanan)  
+Copyright © 2025  
+**Santosh Narayanan**
 
-This project is licensed under the [MIT License](./LICENSE).  
-You are free to use, modify, and distribute this project in accordance with the license, but attribution to the original author is required.  
-
-For reference, the original repository is available at:  
-[https://github.com/santoshnarayanan/dealflow-data](https://github.com/santoshnarayanan/dealflow-data)
+Source repository:  
+https://github.com/santoshnarayanan/dealflow-data
