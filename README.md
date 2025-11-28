@@ -229,23 +229,31 @@ curl -X POST http://localhost:3000/ai-query \
 ```
 
 ## ✨ Features
-- Graph-based model for startups, investors, and funding rounds  
-- AI-powered **natural language to Cypher** via LangChain  
-- RESTful API endpoints for startups, investors, and search  
-- Deployable on **GCP Cloud Run** for scalable cloud hosting  
+- Graph-based data model for startups, investors, and funding rounds  
+- Semantic search using **Weaviate vector embeddings** (OpenAI)  
+- Hybrid search combining **BM25 + vector similarity**  
+- AI-powered **natural language → Cypher** using LangChain  
+- RAG pipeline combining vector search + graph traversal + LLM reasoning  
+- RESTful API endpoints for startups, investors, search, and AI queries  
 - Easy CSV import for bulk loading into Neo4j  
-- Extendable schema for additional domains 
-- Runs seamlessly on Neo4j Aura Free Tier for quick cloud deployment
+- Deployable on **GCP Cloud Run** with autoscaling  
+- Extendable schema for additional domains (Founder, Accelerator, Advisor, etc.)  
+- Works with **Neo4j Aura Free Tier** and **local Docker Weaviate**  
+
 
 ---
 
 ## 🛠 Tech Stack
-- **Frontend:** React + TypeScript (planned)  
+
+- **Frontend:** React + TypeScript + Redux Toolkit (Phase 3), optional AI UI (Gradio / Chainlit)  
 - **Backend:** Node.js (Express.js)  
-- **Database:** Neo4j (AuraDB / Desktop)  
-- **AI Layer:** LangChain (LLM → Cypher translator)  
-- **Deployment:** Google Cloud Platform (Cloud Run)  
-- **Database:** Neo4j Aura (Free Tier) or Neo4j Desktop (v5.x)
+- **Graph Database:** Neo4j AuraDB / Neo4j Desktop  
+- **Vector Database:** Weaviate (OpenAI vectorizer module)  
+- **AI Layer:** LangChain (LLM → Cypher, hybrid graph-vector RAG)  
+- **Embeddings:** OpenAI text-embedding-3-small  
+- **Deployment:** Docker, Google Cloud Run  
+- **Developer Tools:** Cursor IDE, Weaviate VS Code Extension  
+
 
 ---
 
