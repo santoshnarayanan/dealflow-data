@@ -77,18 +77,20 @@ curl -X POST http://localhost:8080/v1/schema \
 node backend/ingest/weaviateIngest.js
 ```
 
-### 5. Explore Data
-Use:
+### 🕹 Explore Data in GUI
+
+Use either:
 
 - **Weaviate VS Code Extension (Cursor)**
 - **Weaviate Studio Desktop App**
 
-You can inspect:
+These tools let you inspect:
 
 - **Objects**
-- **Embeddings**
+- **Embeddings (vectors)**
 - **Schema**
-- **Hybrid queries**
+- **nearText / nearVector / hybrid queries**
+
 
 ---
 ### 5.  Run Backend
