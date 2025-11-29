@@ -60,3 +60,20 @@ export async function vectorSearchInvestors(q: string) {
   if (!res.ok) throw new Error("Vector search for investors failed");
   return res.json();
 }
+
+export async function queryMultiAgent(question: string) {
+  const res = await fetch(`${API_BASE}/ai/multi-agent-query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Multi-agent API error (${res.status}): ${text || res.statusText}`
+    );
+  }
+
+  return res.json();
+}

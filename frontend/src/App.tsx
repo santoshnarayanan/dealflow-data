@@ -8,6 +8,7 @@ import AiQuery from "./pages/AiQuery";
 import SemanticSearch from "./pages/SemanticSearch";
 import HybridAi from "./pages/HybridAi";
 import NotFound from "./pages/NotFound";
+import AiMultiAgent from "./pages/AiMultiAgent";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/ai-query" element={<AiQuery />} />
         <Route path="/semantic-search" element={<SemanticSearch />} />
         <Route path="/hybrid-ai" element={<HybridAi />} />
+        <Route path="/ai-multi-agent" element={<AiMultiAgent />} />
         {/* Catch-all for unknown routes */}
         <Route path="*" element={<NotFound />} />
       </Routes>

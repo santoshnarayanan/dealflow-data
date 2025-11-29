@@ -1,6 +1,7 @@
 // backend/ai/routes/aiRoutes.js
 import express from "express";
 import { askGraph, askRag, askHybrid } from "../services/langchainService.js";
+import { runMultiAgentQuery } from "../services/multiAgentService.js";
 
 const router = express.Router();
 
@@ -63,5 +64,22 @@ router.post("/ai-hybrid", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// ---- New multi-agent endpoint ----
+router.post("/multi-agent-query", async (req, res, next) => {
+  try {
+    const { question } = req.body;
+    if (!question) {
+      return res.status(400).json({ error: "Question is required" });
+    }
+
+    const result = await runMultiAgentQuery(question);
+    res.json(result);
+  } catch (error) {
+    console.error("❌ Multi-agent AI route error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 export default router;

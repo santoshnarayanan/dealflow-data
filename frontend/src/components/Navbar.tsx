@@ -20,8 +20,7 @@ function Navbar() {
           <NavLink
             to="/"
             className={({ isActive }: { isActive: boolean }) =>
-              `${linkClasses} ${
-                isActive ? activeClasses : inactiveClasses
+              `${linkClasses} ${isActive ? activeClasses : inactiveClasses
               }`
             }
           >
@@ -31,8 +30,7 @@ function Navbar() {
           <NavLink
             to="/investors"
             className={({ isActive }: { isActive: boolean }) =>
-              `${linkClasses} ${
-                isActive ? activeClasses : inactiveClasses
+              `${linkClasses} ${isActive ? activeClasses : inactiveClasses
               }`
             }
           >
@@ -42,8 +40,7 @@ function Navbar() {
           <NavLink
             to="/ai-query"
             className={({ isActive }: { isActive: boolean }) =>
-              `${linkClasses} ${
-                isActive ? activeClasses : inactiveClasses
+              `${linkClasses} ${isActive ? activeClasses : inactiveClasses
               }`
             }
           >
@@ -53,8 +50,7 @@ function Navbar() {
           <NavLink
             to="/semantic-search"
             className={({ isActive }: { isActive: boolean }) =>
-              `${linkClasses} ${
-                isActive ? activeClasses : inactiveClasses
+              `${linkClasses} ${isActive ? activeClasses : inactiveClasses
               }`
             }
           >
@@ -64,12 +60,19 @@ function Navbar() {
           <NavLink
             to="/hybrid-ai"
             className={({ isActive }: { isActive: boolean }) =>
-              `${linkClasses} ${
-                isActive ? activeClasses : inactiveClasses
+              `${linkClasses} ${isActive ? activeClasses : inactiveClasses
               }`
             }
           >
             Hybrid AI
+          </NavLink>
+          <NavLink
+            to="/ai-multi-agent"
+            className={({ isActive }: { isActive: boolean }) =>
+              `${linkClasses} ${isActive ? activeClasses : inactiveClasses}`
+            }
+          >
+            AI Multi-Agent
           </NavLink>
         </div>
       </div>
