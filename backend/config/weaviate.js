@@ -1,54 +1,69 @@
 // backend/config/weaviate.js
 import "../loadEnv.js";
 import weaviate from "weaviate-ts-client";
+import { logger } from "../logger.js";
 
 const WEAVIATE_HOST = process.env.WEAVIATE_HOST || "localhost:8080";
 const WEAVIATE_SCHEME = process.env.WEAVIATE_SCHEME || "http";
+
+logger.info(
+  {
+    host: WEAVIATE_HOST,
+    scheme: WEAVIATE_SCHEME,
+  },
+  "📦 Initializing Weaviate client"
+);
 
 export const weaviateClient = weaviate.client({
   scheme: WEAVIATE_SCHEME,
   host: WEAVIATE_HOST,
   headers: {
-    // Needed for text2vec-openai in Weaviate
     "X-OpenAI-Api-Key": process.env.OPENAI_API_KEY || "",
   },
 });
 
-/**
- * Generic vector search helper for a given class.
- */
-export async function vectorSearch({
-  className,
-  concepts,
-  limit = 5,
-  fields,
-}) {
-  if (!concepts || !concepts.length) {
-    throw new Error("concepts array is required for vectorSearch");
+// ---------- Generic Vector Search With Logging ---------- //
+
+export async function vectorSearch({ className, concepts, limit = 5, fields }) {
+  logger.info(
+    { className, concepts, limit },
+    "🔎 Weaviate vectorSearch() called"
+  );
+
+  try {
+    const query = weaviateClient.graphql
+      .get()
+      .withClassName(className)
+      .withFields(
+        fields ||
+          `_additional { distance } 
+           name 
+           description`
+      )
+      .withNearText({ concepts })
+      .withLimit(limit);
+
+    const result = await query.do();
+
+    logger.info(
+      {
+        className,
+        count: result?.data?.Get?.[className]?.length ?? 0,
+      },
+      "📥 Weaviate vector search completed"
+    );
+
+    return result.data.Get[className] || [];
+  } catch (err) {
+    logger.error({ err, className, concepts }, "❌ Weaviate vector search failed");
+    throw err;
   }
-
-  const query = weaviateClient.graphql
-    .get()
-    .withClassName(className)
-    .withFields(
-      fields ||
-        `_additional { distance } 
-         name 
-         description`
-    )
-    .withNearText({ concepts })
-    .withLimit(limit);
-
-  const result = await query.do();
-
-  return result.data.Get[className] || [];
 }
 
-/**
- * Convenience helpers for Startup / Investor.
- */
+// ---------- Startup Search ---------- //
+
 export async function vectorSearchStartups(question, limit = 5) {
-  const items = await vectorSearch({
+  return vectorSearch({
     className: "Startup",
     concepts: [question],
     limit,
@@ -58,19 +73,21 @@ export async function vectorSearchStartups(question, limit = 5) {
       description
       _additional { distance }
     `,
-  });
-
-  return items.map((item) => ({
-    type: "Startup",
-    name: item.name,
-    industry: item.industry,
-    description: item.description,
-    distance: item._additional?.distance ?? null,
-  }));
+  }).then((items) =>
+    items.map((item) => ({
+      type: "Startup",
+      name: item.name,
+      industry: item.industry,
+      description: item.description,
+      distance: item._additional?.distance ?? null,
+    }))
+  );
 }
 
+// ---------- Investor Search ---------- //
+
 export async function vectorSearchInvestors(question, limit = 5) {
-  const items = await vectorSearch({
+  return vectorSearch({
     className: "Investor",
     concepts: [question],
     limit,
@@ -80,13 +97,13 @@ export async function vectorSearchInvestors(question, limit = 5) {
       description
       _additional { distance }
     `,
-  });
-
-  return items.map((item) => ({
-    type: "Investor",
-    name: item.name,
-    investorType: item.type,
-    description: item.description,
-    distance: item._additional?.distance ?? null,
-  }));
+  }).then((items) =>
+    items.map((item) => ({
+      type: "Investor",
+      name: item.name,
+      investorType: item.type,
+      description: item.description,
+      distance: item._additional?.distance ?? null,
+    }))
+  );
 }

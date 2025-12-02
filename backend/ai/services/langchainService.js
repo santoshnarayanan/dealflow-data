@@ -9,6 +9,9 @@ import {
   vectorSearchInvestors,
 } from "../../config/weaviate.js";
 
+import { logger } from "../../logger.js";
+import { neo4jDuration } from "../../metrics/metrics.js";
+
 let llm;
 let graph;
 let cypherPrompt;
@@ -81,7 +84,12 @@ export async function askGraph(question) {
 
     console.log("📝 Clean Cypher:", cypher);
 
+    const endNeo4jTimer = neo4jDuration.startTimer({ queryName: "askGraph" });
     const result = await graph.query(cypher);
+    endNeo4jTimer();
+
+    logger.info({ cypher }, "📡 Executing Cypher query");
+
 
     return {
       question,
@@ -91,6 +99,7 @@ export async function askGraph(question) {
     };
   } catch (err) {
     console.error("❌ askGraph error:", err);
+    logger.error({ err }, "❌ Neo4j query error");
     throw err;
   }
 }

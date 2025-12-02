@@ -3,29 +3,33 @@
 import { ChatOpenAI } from "@langchain/openai";
 import weaviate from "weaviate-ts-client";
 import { askGraph } from "./langchainService.js";
+import { logger } from "../../logger.js";
+import { agentDuration } from "../../metrics/metrics.js";
 
 // ------ LLM + Weaviate setup ------
 
 // Low-temperature for deterministic tools / reasoning
 const llm = new ChatOpenAI({
-  modelName: "gpt-4o-mini",
-  temperature: 0,
-  openAIApiKey: process.env.OPENAI_API_KEY,
+    modelName: "gpt-4o-mini",
+    temperature: 0,
+    openAIApiKey: process.env.OPENAI_API_KEY,
 });
 
 // Weaviate client (same as ingest script)
 const weaviateClient = weaviate.client({
-  scheme: "http",
-  host: "localhost:8080", // adjust if you proxy Weaviate
-  headers: {
-    "X-OpenAI-Api-Key": process.env.OPENAI_API_KEY,
-  },
+    scheme: "http",
+    host: "localhost:8080", // adjust if you proxy Weaviate
+    headers: {
+        "X-OpenAI-Api-Key": process.env.OPENAI_API_KEY,
+    },
 });
 
 // ------ Agent 1: Query Classifier ------
 
 async function classifyRoute(question) {
-  const systemPrompt = `
+    logger.info({ question }, "🧭 Classifier: routing decision");
+    const classifierTimerEnd = agentDuration.startTimer({ agent: "classifier" });
+    const systemPrompt = `
 You are a routing assistant for an AI system that has:
 - A Neo4j graph with structured entities (Startups, Investors, FundingRounds).
 - A Weaviate vector database with semantic documents for Startups and Investors.
@@ -39,94 +43,107 @@ Return ONLY one word, lowercase, no punctuation:
 - "hybrid"  → when both graph structure and semantic text are useful.
   `;
 
-  const msg = await llm.invoke([
-    { role: "system", content: systemPrompt },
-    { role: "user", content: question },
-  ]);
+    const msg = await llm.invoke([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: question },
+    ]);
 
-  const raw = typeof msg.content === "string" ? msg.content : String(msg.content);
-  const route = raw.trim().toLowerCase();
+    const raw = typeof msg.content === "string" ? msg.content : String(msg.content);
+    const route = raw.trim().toLowerCase();
 
-  if (route.startsWith("cypher")) return "cypher";
-  if (route.startsWith("vector")) return "vector";
-  if (route.startsWith("hybrid")) return "hybrid";
+    if (route.startsWith("cypher")) { classifierTimerEnd(); return "cypher"; }
+    if (route.startsWith("vector")) { classifierTimerEnd(); return "vector"; }
+    if (route.startsWith("hybrid")) { classifierTimerEnd(); return "hybrid"; }
 
-  // Fallback – safe default
-  return "cypher";
+    // Fallback – safe default
+    classifierTimerEnd();
+    return "cypher";
 }
 
 // ------ Agent 2: Cypher / Graph Agent (reuses askGraph) ------
 
 async function runCypherAgent(question) {
-  try {
-    const { cypher, result, rawOutput } = await askGraph(question);
-    return {
-      ok: true,
-      cypher,
-      result,
-      rawOutput,
-    };
-  } catch (err) {
-    console.error("❌ Cypher agent error:", err);
-    return {
-      ok: false,
-      error: err.message || "Cypher agent failed",
-    };
-  }
+    const cypherTimerEnd = agentDuration.startTimer({ agent: "cypher" });
+    try {
+        const { cypher, result, rawOutput } = await askGraph(question);
+        logger.info({ question }, "🔍 Vector search requested");
+        return {
+            ok: true,
+            cypher,
+            result,
+            rawOutput,
+        };
+    } catch (err) {
+        logger.error({ err }, "❌ Vector agent error");
+        console.error("❌ Cypher agent error:", err);
+        return {
+            ok: false,
+            error: err.message || "Cypher agent failed",
+        };
+    } finally {
+        cypherTimerEnd();
+    }
 }
 
 // ------ Agent 3: Vector / Weaviate Agent ------
 
 async function runVectorAgent(question) {
-  try {
-    // Query Startup class
-    const startupRes = await weaviateClient.graphql
-      .get()
-      .withClassName("Startup")
-      .withFields("name industry description")
-      .withNearText({ concepts: [question] })
-      .withLimit(5)
-      .do();
+    async function runVectorAgent(question) {
+        const vectorTimerEnd = agentDuration.startTimer({ agent: "vector" });
+        try {
+            logger.info({ question }, "🔍 Vector search requested");
 
-    // Query Investor class
-    const investorRes = await weaviateClient.graphql
-      .get()
-      .withClassName("Investor")
-      .withFields("name type description")
-      .withNearText({ concepts: [question] })
-      .withLimit(5)
-      .do();
+            // Query Startup class
+            const startupRes = await weaviateClient.graphql
+                .get()
+                .withClassName("Startup")
+                .withFields("name industry description")
+                .withNearText({ concepts: [question] })
+                .withLimit(5)
+                .do();
 
-    const startups =
-      startupRes.data?.Get?.Startup ??
-      startupRes.data?.Get?.startup ?? // depending on schema casing
-      [];
+            // Query Investor class
+            const investorRes = await weaviateClient.graphql
+                .get()
+                .withClassName("Investor")
+                .withFields("name type description")
+                .withNearText({ concepts: [question] })
+                .withLimit(5)
+                .do();
 
-    const investors =
-      investorRes.data?.Get?.Investor ??
-      investorRes.data?.Get?.investor ?? // depending on schema casing
-      [];
+            const startups =
+                startupRes.data?.Get?.Startup ??
+                startupRes.data?.Get?.startup ?? // depending on schema casing
+                [];
 
-    return {
-      ok: true,
-      startups,
-      investors,
-      rawStartup: startupRes,
-      rawInvestor: investorRes,
-    };
-  } catch (err) {
-    console.error("❌ Vector agent error:", err);
-    return {
-      ok: false,
-      error: err.message || "Vector agent failed",
-    };
-  }
-}
+            const investors =
+                investorRes.data?.Get?.Investor ??
+                investorRes.data?.Get?.investor ?? // depending on schema casing
+                [];
 
-// ------ Agent 4: Answer / Synthesis Agent ------
+            return {
+                ok: true,
+                startups,
+                investors,
+                rawStartup: startupRes,
+                rawInvestor: investorRes,
+            };
+        } catch (err) {
+            console.error("❌ Vector agent error:", err);
+            logger.error({ err }, "❌ Vector agent error");
+            return {
+                ok: false,
+                error: err.message || "Vector agent failed",
+            };
+        } finally {
+            vectorTimerEnd();
+        }
+    }
+    // ------ Agent 4: Answer / Synthesis Agent ------
 
-async function runAnswerAgent({ question, route, cypherData, vectorData }) {
-  const systemPrompt = `
+    async function runAnswerAgent({ question, route, cypherData, vectorData }) {
+        const answerTimerEnd = agentDuration.startTimer({ agent: "answer" });
+        const systemPrompt = `
 You are a senior AI analyst for an "AI-Augmented Dealflow Data Platform".
 
 You will receive:
@@ -148,94 +165,110 @@ Respond in JSON with exactly these fields:
 }
   `;
 
-  const payload = {
-    question,
-    route,
-    cypherData: cypherData?.ok ? cypherData.result : null,
-    vectorData: vectorData?.ok
-      ? {
-          startups: vectorData.startups,
-          investors: vectorData.investors,
+        const payload = {
+            question,
+            route,
+            cypherData: cypherData?.ok ? cypherData.result : null,
+            vectorData: vectorData?.ok
+                ? {
+                    startups: vectorData.startups,
+                    investors: vectorData.investors,
+                }
+                : null,
+        };
+
+        const msg = await llm.invoke([
+            { role: "system", content: systemPrompt },
+            {
+                role: "user",
+                content: JSON.stringify(payload, null, 2),
+            },
+        ]);
+
+        const text =
+            typeof msg.content === "string" ? msg.content : String(msg.content);
+
+        // Try to parse JSON; if it fails, wrap as answer only
+        try {
+            const parsed = JSON.parse(text);
+            return {
+                answer: parsed.answer ?? text,
+                explanation:
+                    parsed.explanation ??
+                    "Used available graph/vector data to construct the answer.",
+            };
+        } catch {
+            return {
+                answer: text,
+                explanation:
+                    "Model returned non-JSON text; treated entire response as the answer.",
+            };
+        } finally {
+            answerTimerEnd();
         }
-      : null,
-  };
-
-  const msg = await llm.invoke([
-    { role: "system", content: systemPrompt },
-    {
-      role: "user",
-      content: JSON.stringify(payload, null, 2),
-    },
-  ]);
-
-  const text =
-    typeof msg.content === "string" ? msg.content : String(msg.content);
-
-  // Try to parse JSON; if it fails, wrap as answer only
-  try {
-    const parsed = JSON.parse(text);
-    return {
-      answer: parsed.answer ?? text,
-      explanation:
-        parsed.explanation ??
-        "Used available graph/vector data to construct the answer.",
-    };
-  } catch {
-    return {
-      answer: text,
-      explanation:
-        "Model returned non-JSON text; treated entire response as the answer.",
-    };
-  }
+    }
 }
-
-// ------ Orchestrator: Multi-Agent Entry Point ------
 
 export async function runMultiAgentQuery(question) {
-  // 1. Decide route
-  const route = await classifyRoute(question);
-  console.log("🧭 Route decision:", route);
+    // 1. Decide route
+    const endClassifier = agentDuration.startTimer({ agent: "classifier" });
+    const route = await classifyRoute(question);
+    endClassifier();
+    console.log("🧭 Route decision:", route);
 
-  // 2. Run relevant agents
-  let cypherData = null;
-  let vectorData = null;
+    // 2. Run relevant agents
+    let cypherData = null;
+    let vectorData = null;
 
-  if (route === "cypher") {
-    cypherData = await runCypherAgent(question);
-  } else if (route === "vector") {
-    vectorData = await runVectorAgent(question);
-  } else if (route === "hybrid") {
-    // run both in parallel
-    [cypherData, vectorData] = await Promise.all([
-      runCypherAgent(question),
-      runVectorAgent(question),
-    ]);
-  }
+    if (route === "cypher") {
+        const endCypher = agentDuration.startTimer({ agent: "cypher" });
+        cypherData = await runCypherAgent(question);
+        endCypher();
+    } else if (route === "vector") {
+        const endVector = agentDuration.startTimer({ agent: "vector" });
+        vectorData = await runVectorAgent(question);
+        endVector();
+    } else if (route === "hybrid") {
+        // run both in parallel
+        [cypherData, vectorData] = await Promise.all([
+            runCypherAgent(question),
+            runVectorAgent(question),
+        ]);
+    }
 
-  // 3. Synthesize answer
-  const { answer, explanation } = await runAnswerAgent({
-    question,
-    route,
-    cypherData,
-    vectorData,
-  });
+    // 3. Synthesize answer
+    const endAnswer = agentDuration.startTimer({ agent: "answer" });
+    const { answer, explanation } = await runAnswerAgent({
+        question,
+        route,
+        cypherData,
+        vectorData,
+    });
+    endAnswer();
 
-  // 4. Return structured result to API/Frontend
-  return {
-    question,
-    route,
-    answer,
-    explanation,
-    cypher: cypherData?.cypher ?? null,
-    cypherResult: cypherData?.ok ? cypherData.result : null,
-    cypherError: cypherData && !cypherData.ok ? cypherData.error : null,
-    vectorResult:
-      vectorData?.ok
-        ? {
-            startups: vectorData.startups,
-            investors: vectorData.investors,
-          }
-        : null,
-    vectorError: vectorData && !vectorData.ok ? vectorData.error : null,
-  };
+    logger.info(
+        { route, hasCypher: !!cypherData, hasVector: !!vectorData },
+        "🤖 Multi-agent orchestration completed"
+    );
+
+
+    // 4. Return structured result to API/Frontend
+    return {
+        question,
+        route,
+        answer,
+        explanation,
+        cypher: cypherData?.cypher ?? null,
+        cypherResult: cypherData?.ok ? cypherData.result : null,
+        cypherError: cypherData && !cypherData.ok ? cypherData.error : null,
+        vectorResult:
+            vectorData?.ok
+                ? {
+                    startups: vectorData.startups,
+                    investors: vectorData.investors,
+                }
+                : null,
+        vectorError: vectorData && !vectorData.ok ? vectorData.error : null,
+    };
 }
+
