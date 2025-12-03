@@ -11,6 +11,8 @@ import {
 
 import { logger } from "../../logger.js";
 import { neo4jDuration } from "../../metrics/metrics.js";
+import { PERF_THRESHOLDS } from "../../config/perfThresholds.js";
+
 
 let llm;
 let graph;
@@ -89,6 +91,15 @@ export async function askGraph(question) {
     const endNeo4jTimer = neo4jDuration.startTimer({ queryName: "askGraph" });
     const result = await graph.query(cypher);
     endNeo4jTimer();
+
+    const durationMs = (Date.now() - startTimeMs);
+    if (durationMs > PERF_THRESHOLDS.neo4jMs) {
+      logger.warn(
+        { durationMs, cypher },
+        "⚠️ Slow Neo4j query detected"
+      );
+    }
+
 
     logger.debug(
       { traceId, count: result.records?.length ?? 0 },

@@ -3,6 +3,9 @@ import "../loadEnv.js";
 import weaviate from "weaviate-ts-client";
 import { logger } from "../logger.js";
 
+import { PERF_THRESHOLDS } from "../config/perfThresholds.js";
+
+
 const WEAVIATE_HOST = process.env.WEAVIATE_HOST || "localhost:8080";
 const WEAVIATE_SCHEME = process.env.WEAVIATE_SCHEME || "http";
 
@@ -36,14 +39,26 @@ export async function vectorSearch({ className, concepts, limit = 5, fields }) {
       .withClassName(className)
       .withFields(
         fields ||
-          `_additional { distance } 
+        `_additional { distance } 
            name 
            description`
       )
       .withNearText({ concepts })
       .withLimit(limit);
 
+    // ---- F5: slow Weaviate query detection ----
+    const startTime = Date.now();
+
     const result = await query.do();
+
+    const durationMs = Date.now() - startTime;
+
+    if (durationMs > PERF_THRESHOLDS.weaviateMs) {   // you can tune this threshold
+      logger.warn(
+        { className, durationMs },
+        "⚠️ Slow Weaviate vector search detected"
+      );
+    }
 
     logger.info(
       {

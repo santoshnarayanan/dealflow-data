@@ -158,8 +158,10 @@ async function runVectorAgent(question) {
     // ------ Agent 4: Answer / Synthesis Agent ------
 
     async function runAnswerAgent({ question, route, cypherData, vectorData }) {
+        const llmStart = Date.now();
+
         const answerTimerEnd = agentDuration.startTimer({ agent: "answer" });
-        
+
         const systemPrompt = `
 You are a senior AI analyst for an "AI-Augmented Dealflow Data Platform".
 
@@ -202,6 +204,16 @@ Respond in JSON with exactly these fields:
             },
         ]);
 
+        const llmDuration = Date.now() - llmStart;
+
+        if (llmDuration > PERF_THRESHOLDS.llmMs) {
+            logger.warn(
+                { llmDuration, route },
+                "⚠️ Slow LLM response detected"
+            );
+        }
+
+
         const text =
             typeof msg.content === "string" ? msg.content : String(msg.content);
 
@@ -228,8 +240,11 @@ Respond in JSON with exactly these fields:
 
 export async function runMultiAgentQuery(question, traceId) {
     // 1. Decide route
+    const agentStart = Date.now();
+
     logger.info({ traceId, question }, "📌 Orchestrator started");
     const endClassifier = agentDuration.startTimer({ agent: "classifier" });
+
     const route = await classifyRoute(question);
     endClassifier();
     console.log("🧭 Route decision:", route);
@@ -263,6 +278,16 @@ export async function runMultiAgentQuery(question, traceId) {
         vectorData,
     });
     endAnswer();
+
+    const agentDuration = Date.now() - agentStart;
+
+    if (agentDuration > PERF_THRESHOLDS.agentMs) {
+        logger.warn(
+            { agentDuration, route },
+            "⚠️ Slow Multi-Agent orchestration detected"
+        );
+    }
+
 
     logger.info(
         { route, hasCypher: !!cypherData, hasVector: !!vectorData },
