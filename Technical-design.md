@@ -1,275 +1,183 @@
-
 # Technical Design
 
 ## 1. Overview
-The Dealflow Data Platform includes **Neo4j (graph database)** and **Weaviate (vector database)** to support:
+The Dealflow Data Platform combines **Neo4j (graph database)**, **Weaviate (vector database)**, and **LangChain-based AI agents** to support:
 
 - Graph queries (relationships, paths)
-- Vector similarity (semantic search)
-- Hybrid search (BM25 + vector)
-- Combined graph–vector RAG responses (LangChain)
-- A unified backend integrating both databases into a single API powering the React frontend and optional AI sandbox interfaces (Gradio / Chainlit)
+- Vector semantic search (nearText, HNSW)
+- Hybrid graph + vector reasoning
+- Multi-agent workflows with routing logic (Phase 3)
+- Production observability via Prometheus
+- Full-stack architecture with React + Node.js backend
 
 ---
 
-## 2. Architecture
+## 2. System Architecture (Phase 3 Updated)
 
-<!-- 🚀 1. High-Level System Architecture (Frontend + Backend + Databases) -->
-
-![High-Level Architecture Placeholder](./images/Phase2a-HL-Diagram.png)
+<!-- Placeholder: Phase 3 High-Level System Architecture -->
+![Phase3-HighLevel](./images/phase3-high-level.png)
 
 ### Components
 
 - **Frontend (React + TypeScript)**  
-  Interface for startups, investors, and AI-based interactions.
+  Modern UI for browsing startups/investors and invoking AI queries.
 
 - **Backend (Express.js)**  
-  - REST API endpoints such as `/startups`, `/investors`, `/search`, `/ai-query`
-  - Connects to Neo4j and Weaviate
-  - Business logic implemented in the `services/` layer
+  - REST routes (`/startups`, `/investors`, `/vector`, `/ai/*`)
+  - Integrated Neo4j + Weaviate drivers
+  - AI router for multi-agent execution
 
-- **Database: Neo4j (Graph DB)**  
-  - Stores startups, investors, and funding rounds as a connected graph  
-  - Optimized for relationship queries and complex traversals
+- **Multi-Agent Layer (LangChain)**  
+  - Classifier agent (cypher | vector | hybrid)
+  - Cypher agent → Neo4j
+  - Vector agent → Weaviate
+  - Hybrid agent → parallel execution
+  - Answer synthesis agent
 
-- **Vector Database: Weaviate**  
-  - Stores embeddings for semantic similarity search  
-  - Supports hybrid queries (BM25 + vector)
+- **Databases**
+  - **Neo4j** for graph queries  
+  - **Weaviate** for vector semantic search
 
-- **AI Layer (LangChain + OpenAI)**  
-  - Translates natural language questions into Cypher queries  
-  - Performs semantic search and hybrid retrieval  
-  - Generates structured answers
+- **Metrics & Observability**
+  - Prometheus histograms  
+  - Agent timings  
+  - Query latency metrics
 
 ---
 
-## 3. Data Model
+## 3. Data Model — Neo4j Graph Schema
 
-<!-- 🔎 4. Detailed Neo4j Data Model (Your dealflow graph) -->
+<!-- Placeholder: Neo4j Graph Model Diagram -->
+![Phase3-Neo4j-DataModel](./images/phase3-neo4j-model.png)
 
 ### Node Labels
-
-- **Startup**
-  - Properties: `id`, `name`, `industry`, `foundedYear`
-
-- **Investor**
-  - Properties: `id`, `name`, `type`, `location`
-
-- **FundingRound**
-  - Properties: `id`, `roundType`, `amount`, `year`
+- **Startup**: `name`, `industry`, `foundedYear`
+- **Investor**: `name`, `type`, `location`
+- **FundingRound**: `roundType`, `amount`, `year`
 
 ### Relationships
-
 - `(Startup)-[:RAISED]->(FundingRound)`
 - `(Investor)-[:INVESTED_IN]->(FundingRound)`
 - `(Startup)-[:HAS_INVESTOR]->(Investor)`
 
-![Nodes and Relationships Placeholder](./images/Phase2a-Neo4j-Models.png)
+---
+
+## 4. Vector Database Schema — Weaviate
+
+<!-- Placeholder: Weaviate Schema Diagram -->
+![Phase3-Weaviate-Schema](./images/phase3-weaviate-schema.png)
+
+Two classes:
+- **Startup** → `name`, `industry`, `description`, vector
+- **Investor** → `name`, `type`, `description`, vector
+
+Uses **text2vec-openai** embedding module.
 
 ---
 
-### Weaviate (Vector Schema)
+## 5. Backend Internal Architecture (Phase 3)
 
-- **Startup**
-  - `name` (text)  
-  - `industry` (text)  
-  - `description` (text)  
-  - Vector auto-generated using **OpenAI text-embedding-3-small**
+<!-- Placeholder: Backend API Architecture -->
+![Phase3-Backend-Architecture](./images/phase3-backend-architecture.png)
 
-- **Investor**
-  - `name`  
-  - `type`  
-  - `description`  
-  - Vector auto-generated  
+### Key Modules
+- `routes/` → Express routes  
+- `services/` → Neo4j + Weaviate handlers  
+- `ai/` → LangChain agents + multi-agent engine  
+- `metrics/` → Prometheus instrumentation  
 
 ---
 
-## 4. Backend Modules
+## 6. Multi-Agent AI Workflow (Phase 3)
 
-```bash
-backend/
-├── services/
-│   ├── neo4jService.js
-│   ├── weaviateService.js     <-- NEW (Phase 2)
-│   ├── hybridSearchService.js <-- NEW
-│
-├── routes/
-│   ├── search.routes.js       <-- NEW (semantic + hybrid)
-│   ├── startups.routes.js
-│   ├── investors.routes.js
-│
-├── ai/
-│   ├── langchain/
-│   │   ├── fusionPipeline.js  <-- NEW (graph + vector RAG)
-│   │   ├── cypherLLM.js
-│
-└── ingest/
-    ├── weaviateIngest.js      <-- NEW (Phase 2 ingestion)
+<!-- Placeholder: Multi-Agent Workflow Diagram -->
+![Phase3-MultiAgent-Workflow](./images/phase3-multiagent-workflow.png)
 
-
-<!-- 🔍 2. Backend Internal Architecture (Phase 2 Completed) -->
-![Request Sequence Placeholder](./images/Phase2a-Backend-Archiecture.png)
-
-```
-
-### Directory Summary
-
-- **routes/**
-  - Defines REST endpoints
-
-- **services/**
-  - Contains business logic and Cypher queries
-
-- **ai/**
-  - LangChain integration and graph schema
-
-- **middlewares/**
-  - Error handling and shared middleware
+### Workflow Summary
+1. **Classifier Agent**  
+   Determines route: cypher / vector / hybrid.
+2. **Cypher Agent**  
+   Generates Cypher via LLM → Executes on Neo4j.
+3. **Vector Agent**  
+   Performs nearText search on Weaviate.
+4. **Hybrid Agent**  
+   Runs both agents → merges context.
+5. **Answer Agent**  
+   Synthesizes final content with explanation.
 
 ---
 
-## 5. Request Flow
+## 7. Sequence Diagrams (Phase 3)
 
-1. User sends request (`/startups`, `/investors`, or AI query).  
-2. Express route triggers corresponding service.  
-3. Service executes Cypher query via Neo4j driver.  
-4. Response returned to client.
+### 7.1 AI Query (Graph → Cypher → Neo4j)
 
-<!-- 🧠 3. Hybrid AI Pipeline (Graph + Vector + LLM Reasoning) -->
-
-![LangChain Workflow Placeholder](./images/Phase2a-Hybrid-AI-Sequence.png)
+<!-- Placeholder: AI Query Sequence Diagram -->
+![Phase3-AIQuery-Sequence](./images/phase3-aiquery-sequence.png)
 
 ---
 
-## 6. Tech Stack
+### 7.2 Hybrid AI (Graph + Vector + Synthesis)
 
-- **Frontend:** React + TypeScript (GCP deployment)
-- **Backend:** Node.js (Express.js) (GCP deployment)
-- **Database:**  
-  - Neo4j Aura Free Tier or Neo4j Desktop  
-  - Weaviate Docker (vector DB)
-- **AI Layer:** LangChain + OpenAI  
-- **Deployment:** Google Cloud Run (containerized backend)
+<!-- Placeholder: Hybrid AI Sequence Diagram -->
+![Phase3-HybridAI-Sequence](./images/phase3-hybridai-sequence.png)
 
 ---
 
-## 7. Weaviate Usage
+### 7.3 Multi-Agent (Classifier → Agents → Answer)
 
-| Category             | Details                          |
-|----------------------|----------------------------------|
-| **Module**           | `text2vec-openai`                |
-| **Classes**          | `Startup`, `Investor`            |
-| **Search Types**     | `nearText`, `nearVector`, `hybrid`, `BM25` |
+<!-- Placeholder: Multi-Agent Sequence Diagram -->
+![Phase3-MultiAgent-Sequence](./images/phase3-multiagent-sequence.png)
 
 ---
 
-## 8. LangChain Usage
+## 8. Request Flow
 
-LangChain integrates semantic reasoning, Cypher generation, and hybrid retrieval via:
+<!-- Placeholder: Request Flow Diagram -->
+![Phase3-RequestFlow](./images/phase3-request-flow.png)
 
-- **Weaviate** → vector similarity  
-- **Neo4j** → graph traversal  
-- **OpenAI** → reasoning & synthesis  
-
----
-
-### 8.1 Capabilities
-
-- Natural-language → Cypher  
-- Natural-language → vector search  
-- Hybrid retrieval (semantic + graph + metadata)  
-- Graph-aware RAG  
-- Query validation  
-- Multi-step reasoning for investor/startup intelligence  
+1. Frontend → Backend (HTTP JSON)
+2. Backend → Multi-Agent Engine
+3. Agent → Neo4j / Weaviate
+4. Answer → Backend → Frontend
 
 ---
 
-### 8.2 Detailed Flow (Phase 2)
+## 9. Metrics & Observability (Phase 3)
 
-1. User submits natural language question  
-2. Weaviate performs vector or hybrid search  
-3. Neo4j retrieves graph relationships  
-4. LangChain fuses both retrievals  
-5. Backend returns combined semantic + graph result  
+<!-- Placeholder: Metrics Architecture Diagram -->
+![Phase3-Metrics](./images/phase3-metrics.png)
 
+Metrics implemented using **prom-client** histograms:
+- `dealflow_agent_duration_seconds`
+- `dealflow_neo4j_query_seconds`
+- `dealflow_weaviate_query_seconds`
 
-![LangChain Workflow Placeholder](./images/Phase2a-vector-graph-retervial-workflow.png)
----
-
-### 8.3 Example Query
-
-**User Question:**  
-> Which investors participated in Series A fintech startups similar to Stripe?
-
-**Backend Process:**
-
-- Weaviate → find similar startups  
-- Neo4j → fetch Series A investors  
-- LangChain → merge & summarize  
-
-**Generated Cypher Example:**
-
-```cypher
-MATCH (s:Startup {industry:'Fintech'})-[:RAISED]->(f:FundingRound {roundType:'Series A'})
-MATCH (i:Investor)-[:INVESTED_IN]->(f)
-RETURN DISTINCT s.name, i.name;
-```
+Plus default CPU, memory, event loop metrics.
 
 ---
 
-## 9. Non-Functional Considerations
+## 10. Phase 4 (Planned)
 
-### Scalability
-- Cloud Run autoscaling  
-- Managed Neo4j Aura clusters  
-- Weaviate sharding + replication  
-
-### Performance
-- HNSW indexing for Weaviate  
-- Neo4j indexes on key properties  
-- Optional backend caching  
-
-### Cost
-- Local Weaviate = free  
-- Neo4j Aura Free Tier  
-- Cloud Run Free Tier  
-- Pay-per-use OpenAI  
-
-### Reliability
-- Persistent volumes for vector index  
-- Neo4j Aura automated backups  
-
-### Portability
-- Fully containerized  
-- Works on Docker, Cloud Run, GKE, ECS, EC2  
-
-### Extensibility
-- Add new vector classes  
-- Extend Neo4j schema easily  
-
-### Security
-- Env-based secrets  
-- TLS enforced  
-- Rate limiting possible  
-
-### Data Consistency
-- Coordinated ingestion between Neo4j + Weaviate  
-
-### Observability
-- Weaviate readiness endpoints  
-- Cloud Run logs  
-- Neo4j metrics  
+**Agentic AI Enhancements**  
+- Add stateful agents with memory  
+- LangGraph-style nodes for reasoning  
+- Add new tools: Redis cache, Aggregator agent  
+- Streaming LLM responses (SSE)  
+- Context caching for repeated queries  
 
 ---
 
-## 10. License & Acknowledgements
+## 11. Phase 5 (Final Deployment)
 
-- Licensed under **MIT License**  
-- Uses open-source technologies:
-  - Weaviate (BSD-3-Clause)
-  - LangChain (MIT)
-  - Neo4j (GPLv3 CE / Commercial)
-  - React (MIT)
-  - Node.js (MIT)
-  - Docker (Apache 2.0)
-  - OpenAI APIs (Proprietary)
+**Production Cloud Architecture**  
+- Deploy backend on **GCP Cloud Run**  
+- Serve frontend via **Cloud Storage + CDN**  
+- Use **Cloud Build CI/CD**  
+- Managed Neo4j Aura + Weaviate Cloud  
+- Full observability with Grafana dashboards  
+
+---
+
+## 12. Acknowledgements
+Open-source tools: Neo4j, Weaviate, LangChain, React, Node.js.
+
