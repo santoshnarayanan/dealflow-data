@@ -28,6 +28,7 @@ const weaviateClient = weaviate.client({
 
 async function classifyRoute(question) {
     logger.info({ question }, "🧭 Classifier: routing decision");
+    logger.debug({ traceId, question }, "🧭 [Classifier] Deciding route...");
     const classifierTimerEnd = agentDuration.startTimer({ agent: "classifier" });
     const systemPrompt = `
 You are a routing assistant for an AI system that has:
@@ -51,6 +52,9 @@ Return ONLY one word, lowercase, no punctuation:
     const raw = typeof msg.content === "string" ? msg.content : String(msg.content);
     const route = raw.trim().toLowerCase();
 
+    logger.debug({ traceId, route }, "🧭 [Classifier] Route chosen");
+
+
     if (route.startsWith("cypher")) { classifierTimerEnd(); return "cypher"; }
     if (route.startsWith("vector")) { classifierTimerEnd(); return "vector"; }
     if (route.startsWith("hybrid")) { classifierTimerEnd(); return "hybrid"; }
@@ -63,10 +67,13 @@ Return ONLY one word, lowercase, no punctuation:
 // ------ Agent 2: Cypher / Graph Agent (reuses askGraph) ------
 
 async function runCypherAgent(question) {
+    logger.debug({ traceId, question }, "📘 [Cypher] Generating Cypher...");
     const cypherTimerEnd = agentDuration.startTimer({ agent: "cypher" });
     try {
         const { cypher, result, rawOutput } = await askGraph(question);
         logger.info({ question }, "🔍 Vector search requested");
+        logger.debug({ traceId, cypher }, "📘 [Cypher] Cypher generated");
+
         return {
             ok: true,
             cypher,
@@ -89,6 +96,7 @@ async function runCypherAgent(question) {
 
 async function runVectorAgent(question) {
     async function runVectorAgent(question) {
+        logger.debug({ traceId, question }, "🔍 [Vector] Running semantic search...");
         const vectorTimerEnd = agentDuration.startTimer({ agent: "vector" });
         try {
             logger.info({ question }, "🔍 Vector search requested");
@@ -121,6 +129,12 @@ async function runVectorAgent(question) {
                 investorRes.data?.Get?.investor ?? // depending on schema casing
                 [];
 
+            logger.debug(
+                { traceId, startupCount: startups.length, investorCount: investors.length },
+                "🔍 [Vector] Vector search complete"
+            );
+
+
             return {
                 ok: true,
                 startups,
@@ -131,6 +145,8 @@ async function runVectorAgent(question) {
         } catch (err) {
             console.error("❌ Vector agent error:", err);
             logger.error({ err }, "❌ Vector agent error");
+            logger.error({ traceId, err }, "❌ [Vector] Search failed");
+
             return {
                 ok: false,
                 error: err.message || "Vector agent failed",
@@ -143,6 +159,7 @@ async function runVectorAgent(question) {
 
     async function runAnswerAgent({ question, route, cypherData, vectorData }) {
         const answerTimerEnd = agentDuration.startTimer({ agent: "answer" });
+        
         const systemPrompt = `
 You are a senior AI analyst for an "AI-Augmented Dealflow Data Platform".
 
@@ -209,8 +226,9 @@ Respond in JSON with exactly these fields:
     }
 }
 
-export async function runMultiAgentQuery(question) {
+export async function runMultiAgentQuery(question, traceId) {
     // 1. Decide route
+    logger.info({ traceId, question }, "📌 Orchestrator started");
     const endClassifier = agentDuration.startTimer({ agent: "classifier" });
     const route = await classifyRoute(question);
     endClassifier();
@@ -251,9 +269,16 @@ export async function runMultiAgentQuery(question) {
         "🤖 Multi-agent orchestration completed"
     );
 
+    logger.info(
+        { traceId, route },
+        "📌 Orchestrator finished"
+    );
+
+
 
     // 4. Return structured result to API/Frontend
     return {
+        traceId,
         question,
         route,
         answer,

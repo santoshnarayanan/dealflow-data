@@ -83,10 +83,17 @@ export async function askGraph(question) {
     }
 
     console.log("📝 Clean Cypher:", cypher);
+    logger.debug({ traceId, cypher }, "📘 [Cypher] Executing Neo4j query...");
+
 
     const endNeo4jTimer = neo4jDuration.startTimer({ queryName: "askGraph" });
     const result = await graph.query(cypher);
     endNeo4jTimer();
+
+    logger.debug(
+      { traceId, count: result.records?.length ?? 0 },
+      "📘 [Cypher] Neo4j query completed"
+    );
 
     logger.info({ cypher }, "📡 Executing Cypher query");
 
