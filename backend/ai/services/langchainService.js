@@ -58,7 +58,7 @@ Cypher:
 /**
  * Answer a natural language question by generating Cypher and querying Neo4j.
  */
-export async function askGraph(question) {
+export async function askGraph(question, traceId=null) {
   if (!initialized) {
     console.log("⚠️ LangChain not initialized. Initializing now...");
     await initLangChain();
@@ -198,7 +198,7 @@ Answer (concise but complete):
  * Hybrid: Weaviate semantic context + Neo4j graph Cypher.
  * Returns both sets of data + a synthesized answer.
  */
-export async function askHybrid(question) {
+export async function askHybrid(question, traceId=null) {
   if (!initialized) {
     console.log("⚠️ LangChain not initialized. Initializing now...");
     await initLangChain();
@@ -206,7 +206,7 @@ export async function askHybrid(question) {
 
   try {
     // 1) Graph answer (Cypher + Neo4j rows)
-    const graphResult = await askGraph(question);
+    const graphResult = await askGraph(question, traceId);
 
     // 2) Vector answer (Startups + Investors)
     const [startupDocs, investorDocs] = await Promise.all([

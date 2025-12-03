@@ -3,6 +3,7 @@ import express from "express";
 import { askGraph, askRag, askHybrid } from "../services/langchainService.js";
 import { runMultiAgentQuery } from "../services/multiAgentService.js";
 import { createTraceId } from "../../utils/trace.js";
+import { logger } from "../../logger.js";
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ router.post("/ai-query", async (req, res) => {
       return res.status(400).json({ error: "Question is required" });
     }
 
-    const { cypher, result, rawOutput } = await askGraph(question);
+    const { cypher, result, rawOutput } = await askGraph(question,traceId);
 
     res.json({
       question,
@@ -58,7 +59,7 @@ router.post("/ai-hybrid", async (req, res) => {
       return res.status(400).json({ error: "Question is required" });
     }
 
-    const hybridResult = await askHybrid(question);
+    const hybridResult = await askHybrid(question, traceId);
     res.json(hybridResult);
   } catch (error) {
     console.error("❌ AI /ai-hybrid route error:", error);
