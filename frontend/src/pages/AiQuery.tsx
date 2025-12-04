@@ -1,9 +1,18 @@
-import { useState, FormEvent } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { queryAI } from "../services/api";
+
+interface AiResponse {
+  question: string;
+  cypher: string;
+  graphResult?: unknown;
+  rawModelOutput?: string | null;
+  result?: unknown;
+}
 
 function AiQuery() {
   const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<AiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,10 +26,10 @@ function AiQuery() {
 
     try {
       const res = await queryAI(question);
-      setResponse(res);
-    } catch (err: any) {
+      setResponse(res as AiResponse);
+    } catch (err) {
       console.error(err);
-      setError(err.message || "Something went wrong");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -36,7 +45,6 @@ function AiQuery() {
         query and run it on the Neo4j graph.
       </p>
 
-      {/* Input box */}
       <form
         onSubmit={handleSubmit}
         className="flex gap-2 items-center bg-white p-4 rounded-xl shadow-md"
@@ -63,7 +71,6 @@ function AiQuery() {
         </div>
       )}
 
-      {/* Response box */}
       {response && (
         <div className="bg-gray-50 p-6 rounded-xl shadow-inner border space-y-4">
           <p>
@@ -78,11 +85,13 @@ function AiQuery() {
             </span>
           </p>
 
-          {graphResult && (
+          {graphResult !== undefined && graphResult !== null && (
             <div>
               <strong className="text-gray-700">Graph Result:</strong>
               <pre className="mt-2 bg-white p-3 rounded-md border text-sm overflow-x-auto">
-                {JSON.stringify(graphResult, null, 2)}
+                {typeof graphResult === "string"
+                  ? graphResult
+                  : JSON.stringify(graphResult, null, 2)}
               </pre>
             </div>
           )}

@@ -3,17 +3,28 @@ import { DataGrid } from "@mui/x-data-grid";
 import type { GridColDef } from "@mui/x-data-grid";
 import { fetchStartups } from "../services/api";
 
+type Startup = {
+    id: number;
+    name: string;
+    industry: string;
+};
+
 function Startups() {
-    const [rows, setRows] = useState<any[]>([]);
+    const [rows, setRows] = useState<Startup[]>([]);
     const [search, setSearch] = useState("");
 
     useEffect(() => {
         fetchStartups().then((data) => {
-            const formatted = data.map((item: any, index: number) => ({
-                id: index + 1,
-                name: item.name || "Unnamed Startup",
-                industry: item.industry || "N/A",
-            }));
+            const formatted = data.map(
+                (
+                    item: { name?: string; industry?: string },
+                    index: number
+                ) => ({
+                    id: index + 1,
+                    name: item.name || "Unnamed Startup",
+                    industry: item.industry || "N/A",
+                })
+            );
             setRows(formatted);
         });
     }, []);

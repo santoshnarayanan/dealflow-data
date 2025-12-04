@@ -1,5 +1,5 @@
 interface Props {
-  data: any;
+  data: unknown;
 }
 
 export default function JsonViewer({ data }: Props) {
