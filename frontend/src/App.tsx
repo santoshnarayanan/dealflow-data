@@ -7,6 +7,7 @@ import AiQuery from "./pages/AiQuery";
 import SemanticSearch from "./pages/SemanticSearch";
 import HybridAi from "./pages/HybridAi";
 import AiMultiAgent from "./pages/AiMultiAgent";
+import DevTools from "./pages/DevTools";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -20,10 +21,8 @@ function App() {
         <Route path="/semantic-search" element={<SemanticSearch />} />
         <Route path="/hybrid-ai" element={<HybridAi />} />
         <Route path="/ai-multi-agent" element={<AiMultiAgent />} />
-
         {/* Dev Tools placeholder (added in Step 5) */}
-        <Route path="/dev-tools" element={<div>Developer Tools</div>} />
-
+        <Route path="/dev-tools" element={<DevTools />} />
         {/* Fallback */}
         <Route path="*" element={<NotFound />} />
       </Routes>
