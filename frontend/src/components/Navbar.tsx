@@ -1,5 +1,5 @@
 // frontend/src/components/Navbar.tsx
-
+//TODO: TO BE DELETED AS THIS PAGE IS NOT USED AFTER COMPLETE UI IS IMPLEMENTED
 import { NavLink } from "react-router-dom";
 
 function Navbar() {

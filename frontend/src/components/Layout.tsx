@@ -1,3 +1,5 @@
+//TODO: TO BE DELETED AS THIS PAGE IS NOT USED AFTER COMPLETE UI IS IMPLEMENTED
+
 import type { ReactNode } from "react";
 import Navbar from "./Navbar";
 
