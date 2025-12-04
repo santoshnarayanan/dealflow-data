@@ -4,7 +4,6 @@ import { askGraph } from "./langchainService.js";
 import { logger } from "../../logger.js";
 import { agentDuration } from "../../metrics/metrics.js";
 
-// LLM instance
 const llm = new ChatOpenAI({
   modelName: "gpt-4o-mini",
   temperature: 0,
@@ -14,9 +13,9 @@ const llm = new ChatOpenAI({
 // ------------------------------
 // Agent 1: Routing classifier
 // ------------------------------
-async function classifyRoute(question) {
-  logger.info({ question }, "🧭 Classifier: routing decision");
-  logger.debug({ question }, "🧭 [Classifier] Deciding route...");
+async function classifyRoute(question, traceId) {
+  logger.info({ traceId, question }, "🧭 Classifier: routing decision");
+  logger.debug({ traceId, question }, "🧭 [Classifier] Deciding route...");
 
   const systemPrompt = `
 You are a routing assistant. Return only:
@@ -28,32 +27,39 @@ hybrid
 
   const msg = await llm.invoke([
     { role: "system", content: systemPrompt },
-    { role: "user", content: question }
+    { role: "user", content: question },
   ]);
 
   const raw = String(msg.content || "").toLowerCase().trim();
-  logger.debug({ raw }, "🧭 [Classifier] Raw output");
+  logger.debug({ traceId, raw }, "🧭 [Classifier] Raw output");
 
   if (raw.startsWith("cypher")) return "cypher";
   if (raw.startsWith("vector")) return "vector";
   if (raw.startsWith("hybrid")) return "hybrid";
 
-  logger.warn({ raw }, "🧭 [Classifier] Unknown route → defaulting to cypher");
+  logger.warn(
+    { traceId, raw },
+    "🧭 [Classifier] Unknown route → defaulting to cypher"
+  );
   return "cypher";
 }
 
 // ------------------------------
 // Agent 2: Cypher Agent
 // ------------------------------
-async function runCypherAgent(question) {
-  logger.info({ question }, "📘 [Cypher] Agent started");
+async function runCypherAgent(question, traceId) {
+  logger.info({ traceId, question }, "📘 [Cypher] Agent started");
 
   try {
-    logger.debug({ question }, "📘 [Cypher] Calling askGraph()");
-    const { cypher, result, rawOutput } = await askGraph(question);
+    logger.debug({ traceId, question }, "📘 [Cypher] Calling askGraph()");
+    const { cypher, result, rawOutput } = await askGraph(question, traceId);
+
+    const recordCount = Array.isArray(result)
+      ? result.length
+      : result?.records?.length ?? 0;
 
     logger.debug(
-      { cypher, recordCount: result?.length ?? 0 },
+      { traceId, cypher, recordCount },
       "📘 [Cypher] Query executed"
     );
 
@@ -61,10 +67,10 @@ async function runCypherAgent(question) {
       ok: true,
       cypher,
       result,
-      rawOutput
+      rawOutput,
     };
   } catch (err) {
-    logger.error({ err }, "❌ [Cypher] Agent failed");
+    logger.error({ traceId, err }, "❌ [Cypher] Agent failed");
     return { ok: false, error: err.message };
   }
 }
@@ -72,8 +78,8 @@ async function runCypherAgent(question) {
 // ------------------------------
 // Agent 3: Vector Agent
 // ------------------------------
-async function runVectorAgent(question) {
-  logger.info({ question }, "🔍 [Vector] Semantic search started");
+async function runVectorAgent(question, traceId) {
+  logger.info({ traceId, question }, "🔍 [Vector] Semantic search started");
 
   try {
     const startupRes = await weaviateClient.graphql
@@ -96,17 +102,21 @@ async function runVectorAgent(question) {
     const investors = investorRes.data?.Get?.Investor ?? [];
 
     logger.debug(
-      { startupCount: startups.length, investorCount: investors.length },
+      {
+        traceId,
+        startupCount: startups.length,
+        investorCount: investors.length,
+      },
       "🔍 [Vector] Results received"
     );
 
     return {
       ok: true,
       startups,
-      investors
+      investors,
     };
   } catch (err) {
-    logger.error({ err }, "❌ [Vector] Agent failed");
+    logger.error({ traceId, err }, "❌ [Vector] Agent failed");
     return { ok: false, error: err.message };
   }
 }
@@ -114,8 +124,8 @@ async function runVectorAgent(question) {
 // ------------------------------
 // Agent 4: Answer Agent
 // ------------------------------
-async function runAnswerAgent({ question, route, cypherData, vectorData }) {
-  logger.info({ question, route }, "🧠 [Answer] Synthesizing response");
+async function runAnswerAgent({ question, route, cypherData, vectorData, traceId }) {
+  logger.info({ traceId, question, route }, "🧠 [Answer] Synthesizing response");
 
   const systemPrompt = `
 Return JSON with:
@@ -127,25 +137,25 @@ Return JSON with:
     question,
     route,
     cypherData: cypherData?.ok ? cypherData.result : null,
-    vectorData: vectorData?.ok ? vectorData : null
+    vectorData: vectorData?.ok ? vectorData : null,
   };
 
   const msg = await llm.invoke([
     { role: "system", content: systemPrompt },
-    { role: "user", content: JSON.stringify(payload, null, 2) }
+    { role: "user", content: JSON.stringify(payload, null, 2) },
   ]);
 
   const text = String(msg.content || "").trim();
 
   try {
     const parsed = JSON.parse(text);
-    logger.debug({}, "🧠 [Answer] JSON parsed successfully");
+    logger.debug({ traceId }, "🧠 [Answer] JSON parsed successfully");
     return parsed;
   } catch {
-    logger.warn({}, "🧠 [Answer] Model returned non-JSON, falling back");
+    logger.warn({ traceId }, "🧠 [Answer] Model returned non-JSON, falling back");
     return {
       answer: text,
-      explanation: "Model returned plain text; no JSON format."
+      explanation: "Model returned plain text; no JSON format.",
     };
   }
 }
@@ -153,27 +163,25 @@ Return JSON with:
 // ------------------------------
 // Orchestrator
 // ------------------------------
-export async function runMultiAgentQuery(question) {
-  logger.info({ question }, "📌 Orchestrator started");
+export async function runMultiAgentQuery(question, traceId = null) {
+  logger.info({ traceId, question }, "📌 Orchestrator started");
 
-  // 1. Classify
-  const t1 = agentDuration.startTimer({ agent: "classifier" });
-  const route = await classifyRoute(question);
-  t1();
+  const tClassifier = agentDuration.startTimer({ agent: "classifier" });
+  const route = await classifyRoute(question, traceId);
+  tClassifier();
 
   let cypherData = null;
   let vectorData = null;
 
-  // 2. Run selected path
   if (route === "cypher") {
     const t = agentDuration.startTimer({ agent: "cypher" });
-    cypherData = await runCypherAgent(question);
+    cypherData = await runCypherAgent(question, traceId);
     t();
   }
 
   if (route === "vector") {
     const t = agentDuration.startTimer({ agent: "vector" });
-    vectorData = await runVectorAgent(question);
+    vectorData = await runVectorAgent(question, traceId);
     t();
   }
 
@@ -182,25 +190,25 @@ export async function runMultiAgentQuery(question) {
     const t2 = agentDuration.startTimer({ agent: "vector" });
 
     [cypherData, vectorData] = await Promise.all([
-      runCypherAgent(question),
-      runVectorAgent(question)
+      runCypherAgent(question, traceId),
+      runVectorAgent(question, traceId),
     ]);
 
     t1();
     t2();
   }
 
-  // 3. Answer Agent
-  const t3 = agentDuration.startTimer({ agent: "answer" });
+  const tAnswer = agentDuration.startTimer({ agent: "answer" });
   const answerObj = await runAnswerAgent({
     question,
     route,
     cypherData,
-    vectorData
+    vectorData,
+    traceId,
   });
-  t3();
+  tAnswer();
 
-  logger.info({ route }, "📌 Orchestrator complete");
+  logger.info({ traceId, route }, "📌 Orchestrator complete");
 
   return {
     question,
@@ -208,6 +216,6 @@ export async function runMultiAgentQuery(question) {
     ...answerObj,
     cypher: cypherData?.cypher ?? null,
     cypherResult: cypherData?.result ?? null,
-    vectorResult: vectorData ?? null
+    vectorResult: vectorData ?? null,
   };
 }

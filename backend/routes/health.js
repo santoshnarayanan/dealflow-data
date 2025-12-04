@@ -1,24 +1,20 @@
 // backend/routes/health.js
 import express from "express";
 import driver from "../config/neo4j.js";
-import { weaviateClient } from "../config/weaviate.js";
 import { logger } from "../logger.js";
 import { runMultiAgentQuery } from "../ai/services/multiAgentService.js";
 import { initLangChain } from "../ai/services/langchainService.js";
 
 const router = express.Router();
+const WEAVIATE_HOST = process.env.WEAVIATE_HOST || "localhost:8080";
 
-// ---------------------
-// Simple Health Check
-// ---------------------
+// Simple health
 router.get("/", (req, res) => {
   logger.info("💚 Basic health check");
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// ---------------------
-// Neo4j Health Check
-// ---------------------
+// Neo4j
 router.get("/neo4j", async (req, res) => {
   const session = driver.session({ database: process.env.NEO4J_DATABASE });
 
@@ -34,15 +30,23 @@ router.get("/neo4j", async (req, res) => {
   }
 });
 
-// ---------------------
-// Weaviate Health Check
-// ---------------------
+// Weaviate
 router.get("/weaviate", async (req, res) => {
   try {
     logger.info("🩺 Checking Weaviate readiness...");
-    const ready = await fetch(
-      `http://${process.env.WEAVIATE_HOST || "localhost:8080"}/v1/.well-known/ready`
-    ).then((r) => r.json());
+    const text = await fetch(
+      `http://${WEAVIATE_HOST}/v1/.well-known/ready`
+    ).then((r) => r.text());
+
+    let ready;
+    if (!text || text.trim() === "") {
+      const schema = await fetch(`http://${WEAVIATE_HOST}/v1/schema`).then((r) =>
+        r.json()
+      );
+      ready = schema ? { status: "READY" } : null;
+    } else {
+      ready = JSON.parse(text);
+    }
 
     res.json({ status: "ok", weaviate: ready });
   } catch (err) {
@@ -51,9 +55,7 @@ router.get("/weaviate", async (req, res) => {
   }
 });
 
-// ---------------------
-// Agent System Health
-// ---------------------
+// Agent system
 router.get("/agents", async (req, res) => {
   try {
     logger.info("🤖 Checking multi-agent readiness...");
@@ -71,9 +73,7 @@ router.get("/agents", async (req, res) => {
   }
 });
 
-// ---------------------
-// Full Summary
-// ---------------------
+// Full summary
 router.get("/summary", async (req, res) => {
   logger.info("📊 Running full system health summary...");
 
@@ -88,44 +88,40 @@ router.get("/summary", async (req, res) => {
   try {
     const session = driver.session({ database: process.env.NEO4J_DATABASE });
     const result = await session.run("RETURN 1 AS ok");
-    summary.neo4j = "ok";
+    summary.neo4j = result.records[0].get("ok") === 1 ? "ok" : "unknown";
     await session.close();
   } catch (err) {
     summary.neo4j = err.message;
   }
 
   // Weaviate
-  // try {
-  //   const ready = await fetch(
-  //     `http://${process.env.WEAVIATE_HOST || "localhost:8080"}/v1/.well-known/ready`
-  //   ).then((r) => r.json());
-  //   summary.weaviate = ready.status || "unknown";
-  // } catch (err) {
-  //   summary.weaviate = err.message;
-  // }
-
-  let ready;
-
   try {
-    ready = await fetch(`http://${host}/v1/.well-known/ready`).then(r => r.text());
-    if (!ready || ready.trim() === "") {
-      // fallback to schema query
-      const schema = await fetch(`http://${host}/v1/schema`).then(r => r.json());
+    const text = await fetch(
+      `http://${WEAVIATE_HOST}/v1/.well-known/ready`
+    ).then((r) => r.text());
+
+    let ready;
+    if (!text || text.trim() === "") {
+      const schema = await fetch(`http://${WEAVIATE_HOST}/v1/schema`).then((r) =>
+        r.json()
+      );
       ready = schema ? { status: "READY" } : null;
     } else {
-      ready = JSON.parse(ready);
+      ready = JSON.parse(text);
     }
-  } catch (err) {
-    logger.warn("Primary /ready endpoint failed, trying fallback...");
 
+    summary.weaviate = ready?.status || "unknown";
+  } catch (err) {
+    logger.warn({ err }, "Weaviate summary check failed; trying fallback");
     try {
-      const schema = await fetch(`http://${host}/v1/schema`).then(r => r.json());
-      ready = schema ? { status: "READY" } : null;
-    } catch {
-      throw new Error("Weaviate not reachable");
+      const schema = await fetch(`http://${WEAVIATE_HOST}/v1/schema`).then((r) =>
+        r.json()
+      );
+      summary.weaviate = schema ? "READY" : "unreachable";
+    } catch (innerErr) {
+      summary.weaviate = innerErr.message;
     }
   }
-
 
   // Agents
   try {

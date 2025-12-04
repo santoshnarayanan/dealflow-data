@@ -13,15 +13,11 @@ import { logger } from "../../logger.js";
 import { neo4jDuration } from "../../metrics/metrics.js";
 import { PERF_THRESHOLDS } from "../../config/perfThresholds.js";
 
-
 let llm;
 let graph;
 let cypherPrompt;
 let initialized = false;
 
-/**
- * Initialize LangChain (Neo4j graph + OpenAI model + prompt template).
- */
 export async function initLangChain() {
   if (initialized) return;
 
@@ -31,10 +27,9 @@ export async function initLangChain() {
     url: process.env.NEO4J_URI,
     username: process.env.NEO4J_USERNAME,
     password: process.env.NEO4J_PASSWORD,
-    database: process.env.NEO4J_DATABASE,   // <-- REQUIRED
+    database: process.env.NEO4J_DATABASE,
     schema: graphSchema,
   });
-
 
   llm = new ChatOpenAI({
     modelName: "gpt-4o-mini",
@@ -49,16 +44,16 @@ You are a Cypher expert. Given a question and this schema:
 Generate a Cypher query.
 Question: {question}
 Cypher:
-  `);
+`);
 
   initialized = true;
   console.log("✅ LangChain ready");
 }
 
 /**
- * Answer a natural language question by generating Cypher and querying Neo4j.
+ * Natural language → Cypher → Neo4j.
  */
-export async function askGraph(question, traceId=null) {
+export async function askGraph(question, traceId = null) {
   if (!initialized) {
     console.log("⚠️ LangChain not initialized. Initializing now...");
     await initLangChain();
@@ -70,7 +65,17 @@ export async function askGraph(question, traceId=null) {
       question,
     });
 
+    const llmStart = Date.now();
     const cypherResponse = await llm.invoke(prompt);
+    const llmDurationMs = Date.now() - llmStart;
+
+    if (llmDurationMs > PERF_THRESHOLDS.llmMs) {
+      logger.warn(
+        { traceId, llmDurationMs },
+        "⚠️ Slow LLM response in askGraph"
+      );
+    }
+
     const rawOutput = String(cypherResponse.content ?? "").trim();
 
     // Extract Cypher from markdown/code fences if present
@@ -79,35 +84,36 @@ export async function askGraph(question, traceId=null) {
     if (blockMatch) {
       cypher = blockMatch[1].trim();
     }
-    const matchIndex = cypher.indexOf("MATCH");
+    const matchIndex = cypher.toUpperCase().indexOf("MATCH");
     if (matchIndex > -1) {
       cypher = cypher.slice(matchIndex).trim();
     }
 
-    console.log("📝 Clean Cypher:", cypher);
     logger.debug({ traceId, cypher }, "📘 [Cypher] Executing Neo4j query...");
 
-
+    const neo4jStart = Date.now();
     const endNeo4jTimer = neo4jDuration.startTimer({ queryName: "askGraph" });
     const result = await graph.query(cypher);
     endNeo4jTimer();
 
-    const durationMs = (Date.now() - startTimeMs);
-    if (durationMs > PERF_THRESHOLDS.neo4jMs) {
+    const neo4jDurationMs = Date.now() - neo4jStart;
+    if (neo4jDurationMs > PERF_THRESHOLDS.neo4jMs) {
       logger.warn(
-        { durationMs, cypher },
+        { traceId, neo4jDurationMs, cypher },
         "⚠️ Slow Neo4j query detected"
       );
     }
 
+    const recordCount = Array.isArray(result)
+      ? result.length
+      : result?.records?.length ?? 0;
 
     logger.debug(
-      { traceId, count: result.records?.length ?? 0 },
+      { traceId, count: recordCount },
       "📘 [Cypher] Neo4j query completed"
     );
 
-    logger.info({ cypher }, "📡 Executing Cypher query");
-
+    logger.info({ traceId, cypher }, "📡 Executed Cypher query");
 
     return {
       question,
@@ -116,8 +122,7 @@ export async function askGraph(question, traceId=null) {
       result,
     };
   } catch (err) {
-    console.error("❌ askGraph error:", err);
-    logger.error({ err }, "❌ Neo4j query error");
+    logger.error({ traceId, err }, "❌ askGraph error");
     throw err;
   }
 }
@@ -198,7 +203,7 @@ Answer (concise but complete):
  * Hybrid: Weaviate semantic context + Neo4j graph Cypher.
  * Returns both sets of data + a synthesized answer.
  */
-export async function askHybrid(question, traceId=null) {
+export async function askHybrid(question, traceId = null) {
   if (!initialized) {
     console.log("⚠️ LangChain not initialized. Initializing now...");
     await initLangChain();
@@ -238,14 +243,15 @@ ${JSON.stringify(graphResult.result, null, 2)}
 ---
 Vector (Weaviate) context:
 ${allDocs
-        .map(
-          (d) =>
-            `${d.type}: ${d.name} - ${d.description} (distance: ${d.distance !== null && d.distance !== undefined
-              ? d.distance.toFixed(3)
-              : "n/a"
-            })`
-        )
-        .join("\n")}
+  .map(
+    (d) =>
+      `${d.type}: ${d.name} - ${d.description} (distance: ${
+        d.distance !== null && d.distance !== undefined
+          ? d.distance.toFixed(3)
+          : "n/a"
+      })`
+  )
+  .join("\n")}
 
 ---
 Final answer to the user:
